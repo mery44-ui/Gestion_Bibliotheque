@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h4 class="mb-4">📊 Tableau de bord</h4>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card text-center p-3">
+            <h2 class="text-primary">{{ data.total_livres }}</h2>
+            <p class="text-muted mb-0">Total livres</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center p-3">
+            <h2 class="text-success">{{ data.livres_disponibles }}</h2>
+            <p class="text-muted mb-0">Disponibles</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center p-3">
+            <h2 class="text-warning">{{ data.emprunts_en_cours }}</h2>
+            <p class="text-muted mb-0">Emprunts en cours</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center p-3">
+            <h2 class="text-danger">{{ data.emprunts_en_retard }}</h2>
+            <p class="text-muted mb-0">En retard</p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-4">
+        <div class="card text-center p-3">
+            <h2 class="text-info">{{ data.membres_actifs }}</h2>
+            <p class="text-muted mb-0">Membres actifs</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center p-3">
+            <h2 class="text-primary">{{ data.nouveaux_ce_mois }}</h2>
+            <p class="text-muted mb-0">Nouveaux ce mois</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center p-3">
+            <h2 class="text-success">{{ data.retours_ce_mois }}</h2>
+            <p class="text-muted mb-0">Retours ce mois</p>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

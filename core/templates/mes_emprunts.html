@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h4 class="mb-4">📖 Mes Emprunts</h4>
+
+<table class="table table-hover">
+    <thead class="table-dark">
+        <tr>
+            <th>Livre</th>
+            <th>Date emprunt</th>
+            <th>Date retour prévue</th>
+            <th>Statut</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for emprunt in emprunts %}
+    <tr>
+        <td>{{ emprunt.livre }}</td>
+        <td>{{ emprunt.date_emprunt }}</td>
+        <td>{{ emprunt.date_retour }}</td>
+        <td>
+            {% if emprunt.retard > 0 %}
+                <span class="badge bg-danger">Retard {{ emprunt.retard }} jours</span>
+            {% else %}
+                <span class="badge bg-success">En cours</span>
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
