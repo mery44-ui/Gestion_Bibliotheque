@@ -3,23 +3,170 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📚 Bibliothèque Universitaire</title>
+    <title>Bibliothèque Universitaire</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
     <style>
-        .navbar { background-color: #2c3e50; }
-        .sidebar { background-color: #f8f9fa; min-height: 100vh; padding: 20px; }
-        .card { border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .btn-primary { background-color: #2c3e50; border: none; }
-        .btn-primary:hover { background-color: #34495e; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { display: flex; min-height: 100vh; background: #f0f4f8; font-family: sans-serif; }
+
+        .sidebar {
+            width: 240px;
+            background: #0C447C;
+            min-height: 100vh;
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0; left: 0;
+        }
+        .sidebar-brand {
+            color: #fff;
+            font-size: 15px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 32px;
+            padding-bottom: 20px;
+            border-bottom: 0.5px solid rgba(255,255,255,0.2);
+        }
+        .sidebar-section {
+            font-size: 10px;
+            color: #B5D4F4;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            margin-top: 16px;
+        }
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            color: #B5D4F4;
+            text-decoration: none;
+            font-size: 14px;
+            margin-bottom: 4px;
+            transition: background 0.2s;
+        }
+        .sidebar-link:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .sidebar-link.active { background: rgba(255,255,255,0.15); color: #fff; }
+        .sidebar-link i { font-size: 18px; }
+
+        .sidebar-user {
+            margin-top: auto;
+            padding-top: 16px;
+            border-top: 0.5px solid rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .user-avatar {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: 14px; font-weight: 500;
+        }
+        .user-info { flex: 1; }
+        .user-name { color: #fff; font-size: 13px; font-weight: 500; }
+        .user-role { color: #B5D4F4; font-size: 11px; }
+
+        .main-content {
+            margin-left: 240px;
+            flex: 1;
+            padding: 28px;
+        }
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+        .page-title { font-size: 20px; font-weight: 500; color: #042C53; }
+        .page-sub { font-size: 13px; color: #888780; }
+        .logout-btn {
+            display: flex; align-items: center; gap: 6px;
+            padding: 8px 14px;
+            border-radius: 8px;
+            background: #FCEBEB;
+            color: #A32D2D;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .logout-btn:hover { background: #F7C1C1; color: #A32D2D; }
     </style>
 </head>
 <body>
-<nav class="navbar navbar-dark px-4 py-3">
-    <span class="navbar-brand fw-bold">📚 Bibliothèque Universitaire</span>
-    <span class="text-white">{{ user.username }}</span>
-</nav>
 
-<div class="container mt-4">
+<div class="sidebar">
+    <div class="sidebar-brand">
+        <i class="ti ti-books" style="font-size:22px;"></i>
+        Bibliothèque
+    </div>
+
+    {% if request.session.role == 'etudiant' %}
+        <div class="sidebar-section">Mon espace</div>
+        <a href="/recherche/" class="sidebar-link {% if request.path == '/recherche/' %}active{% endif %}">
+            <i class="ti ti-search"></i> Rechercher un livre
+        </a>
+        <a href="/emprunts/" class="sidebar-link {% if request.path == '/emprunts/' %}active{% endif %}">
+            <i class="ti ti-book"></i> Mes emprunts
+        </a>
+        <a href="/fiche/" class="sidebar-link {% if request.path == '/fiche/' %}active{% endif %}">
+            <i class="ti ti-user"></i> Ma fiche
+        </a>
+
+    {% elif request.session.role == 'bibliothecaire' %}
+        <div class="sidebar-section">Gestion</div>
+        <a href="/gestion-livres/" class="sidebar-link {% if request.path == '/gestion-livres/' %}active{% endif %}">
+            <i class="ti ti-books"></i> Gestion livres
+        </a>
+        <a href="/gestion-membres/" class="sidebar-link {% if request.path == '/gestion-membres/' %}active{% endif %}">
+            <i class="ti ti-users"></i> Gestion membres
+        </a>
+        <a href="/gestion-emprunts/" class="sidebar-link {% if request.path == '/gestion-emprunts/' %}active{% endif %}">
+            <i class="ti ti-clipboard-list"></i> Gestion emprunts
+        </a>
+
+    {% elif request.session.role == 'administrateur' %}
+        <div class="sidebar-section">Administration</div>
+        <a href="/dashboard/" class="sidebar-link {% if request.path == '/dashboard/' %}active{% endif %}">
+            <i class="ti ti-layout-dashboard"></i> Tableau de bord
+        </a>
+        <a href="/comptes/" class="sidebar-link {% if request.path == '/comptes/' %}active{% endif %}">
+            <i class="ti ti-settings"></i> Gestion comptes
+        </a>
+        <a href="/rapport/" class="sidebar-link {% if request.path == '/rapport/' %}active{% endif %}">
+            <i class="ti ti-file-analytics"></i> Rapports
+        </a>
+    {% endif %}
+
+    <div class="sidebar-user">
+        <div class="user-avatar">
+            {{ request.session.user|first|upper }}
+        </div>
+        <div class="user-info">
+            <div class="user-name">{{ request.session.user }}</div>
+            <div class="user-role">{{ request.session.role }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="topbar">
+        <div>
+            <div class="page-title">{% block page_title %}Bibliothèque{% endblock %}</div>
+            <div class="page-sub">{% block page_sub %}{% endblock %}</div>
+        </div>
+        <a href="/logout/" class="logout-btn">
+            <i class="ti ti-logout"></i> Déconnexion
+        </a>
+    </div>
+
     {% block content %}
     {% endblock %}
 </div>

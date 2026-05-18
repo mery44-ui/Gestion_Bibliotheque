@@ -1,54 +1,171 @@
 {% extends 'base.html' %}
+{% block page_title %}Tableau de bord{% endblock %}
+{% block page_sub %}Vue d'ensemble — Mai 2026{% endblock %}
 {% block content %}
+<div style="background:#0C447C; border-radius:12px; padding:24px; margin-bottom:24px;">
 
-<h4 class="mb-4">📊 Tableau de bord</h4>
+  <p style="color:#fff; font-size:18px; font-weight:500; margin-bottom:4px;">Tableau de bord</p>
+  <p style="color:#B5D4F4; font-size:13px; margin-bottom:20px;">Vue d'ensemble</p>
 
-<div class="row g-3 mb-4">
-    <div class="col-md-3">
-        <div class="card text-center p-3">
-            <h2 class="text-primary">{{ data.total_livres }}</h2>
-            <p class="text-muted mb-0">Total livres</p>
-        </div>
+  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px;">
+
+    <div style="background:#fff; border-radius:12px; padding:18px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <div style="width:38px;height:38px;border-radius:8px;background:#E6F1FB;display:flex;align-items:center;justify-content:center;color:#185FA5;font-size:18px;">
+          <i class="ti ti-book"></i></div>
+        <span style="font-size:12px;font-weight:500;padding:3px 8px;border-radius:8px;background:#E6F1FB;color:#185FA5;">100%</span>
+      </div>
+      <div style="font-size:28px;font-weight:500;color:#042C53;">{{ data.total_livres }}</div>
+      <div style="font-size:12px;color:#888780;margin-bottom:12px;">Total livres</div>
+      <div style="height:6px;background:#E6F1FB;border-radius:4px;">
+        <div style="height:6px;width:100%;background:#185FA5;border-radius:4px;"></div></div>
     </div>
-    <div class="col-md-3">
-        <div class="card text-center p-3">
-            <h2 class="text-success">{{ data.livres_disponibles }}</h2>
-            <p class="text-muted mb-0">Disponibles</p>
-        </div>
+
+    <div style="background:#fff; border-radius:12px; padding:18px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <div style="width:38px;height:38px;border-radius:8px;background:#EAF3DE;display:flex;align-items:center;justify-content:center;color:#3B6D11;font-size:18px;">
+          <i class="ti ti-circle-check"></i></div>
+        <span style="font-size:12px;font-weight:500;padding:3px 8px;border-radius:8px;background:#EAF3DE;color:#3B6D11;">73%</span>
+      </div>
+      <div style="font-size:28px;font-weight:500;color:#042C53;">{{ data.livres_disponibles }}</div>
+      <div style="font-size:12px;color:#888780;margin-bottom:12px;">Livres disponibles</div>
+      <div style="height:6px;background:#EAF3DE;border-radius:4px;">
+        <div style="height:6px;width:73%;background:#3B6D11;border-radius:4px;"></div></div>
     </div>
-    <div class="col-md-3">
-        <div class="card text-center p-3">
-            <h2 class="text-warning">{{ data.emprunts_en_cours }}</h2>
-            <p class="text-muted mb-0">Emprunts en cours</p>
-        </div>
+
+    <div style="background:#fff; border-radius:12px; padding:18px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <div style="width:38px;height:38px;border-radius:8px;background:#FAEEDA;display:flex;align-items:center;justify-content:center;color:#854F0B;font-size:18px;">
+          <i class="ti ti-clock"></i></div>
+        <span style="font-size:12px;font-weight:500;padding:3px 8px;border-radius:8px;background:#FAEEDA;color:#854F0B;">27%</span>
+      </div>
+      <div style="font-size:28px;font-weight:500;color:#042C53;">{{ data.emprunts_en_cours }}</div>
+      <div style="font-size:12px;color:#888780;margin-bottom:12px;">Emprunts en cours</div>
+      <div style="height:6px;background:#FAEEDA;border-radius:4px;">
+        <div style="height:6px;width:27%;background:#854F0B;border-radius:4px;"></div></div>
     </div>
-    <div class="col-md-3">
-        <div class="card text-center p-3">
-            <h2 class="text-danger">{{ data.emprunts_en_retard }}</h2>
-            <p class="text-muted mb-0">En retard</p>
-        </div>
+
+    <div style="background:#fff; border-radius:12px; padding:18px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <div style="width:38px;height:38px;border-radius:8px;background:#FCEBEB;display:flex;align-items:center;justify-content:center;color:#A32D2D;font-size:18px;">
+          <i class="ti ti-alert-triangle"></i></div>
+        <span style="font-size:12px;font-weight:500;padding:3px 8px;border-radius:8px;background:#FCEBEB;color:#A32D2D;">10%</span>
+      </div>
+      <div style="font-size:28px;font-weight:500;color:#042C53;">{{ data.emprunts_en_retard }}</div>
+      <div style="font-size:12px;color:#888780;margin-bottom:12px;">Emprunts en retard</div>
+      <div style="height:6px;background:#FCEBEB;border-radius:4px;">
+        <div style="height:6px;width:10%;background:#A32D2D;border-radius:4px;"></div></div>
     </div>
+
+    <div style="background:#fff; border-radius:12px; padding:18px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <div style="width:38px;height:38px;border-radius:8px;background:#EEEDFE;display:flex;align-items:center;justify-content:center;color:#534AB7;font-size:18px;">
+          <i class="ti ti-users"></i></div>
+        <span style="font-size:12px;font-weight:500;padding:3px 8px;border-radius:8px;background:#EEEDFE;color:#534AB7;">100%</span>
+      </div>
+      <div style="font-size:28px;font-weight:500;color:#042C53;">{{ data.membres_actifs }}</div>
+      <div style="font-size:12px;color:#888780;margin-bottom:12px;">Membres actifs</div>
+      <div style="height:6px;background:#EEEDFE;border-radius:4px;">
+        <div style="height:6px;width:100%;background:#534AB7;border-radius:4px;"></div></div>
+    </div>
+
+    <div style="background:#fff; border-radius:12px; padding:18px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <div style="width:38px;height:38px;border-radius:8px;background:#E1F5EE;display:flex;align-items:center;justify-content:center;color:#0F6E56;font-size:18px;">
+          <i class="ti ti-trending-up"></i></div>
+        <span style="font-size:12px;font-weight:500;padding:3px 8px;border-radius:8px;background:#E1F5EE;color:#0F6E56;">27%</span>
+      </div>
+      <div style="font-size:28px;font-weight:500;color:#042C53;">{{ data.nouveaux_ce_mois }}</div>
+      <div style="font-size:12px;color:#888780;margin-bottom:12px;">Nouveaux ce mois</div>
+      <div style="height:6px;background:#E1F5EE;border-radius:4px;">
+        <div style="height:6px;width:27%;background:#0F6E56;border-radius:4px;"></div></div>
+    </div>
+
+    <div style="background:#fff; border-radius:12px; padding:18px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <div style="width:38px;height:38px;border-radius:8px;background:#FAECE7;display:flex;align-items:center;justify-content:center;color:#993C1D;font-size:18px;">
+          <i class="ti ti-arrow-back"></i></div>
+        <span style="font-size:12px;font-weight:500;padding:3px 8px;border-radius:8px;background:#FAECE7;color:#993C1D;">40%</span>
+      </div>
+      <div style="font-size:28px;font-weight:500;color:#042C53;">{{ data.retours_ce_mois }}</div>
+      <div style="font-size:12px;color:#888780;margin-bottom:12px;">Retours ce mois</div>
+      <div style="height:6px;background:#FAECE7;border-radius:4px;">
+        <div style="height:6px;width:40%;background:#993C1D;border-radius:4px;"></div></div>
+    </div>
+
+  </div>
 </div>
 
-<div class="row g-3">
-    <div class="col-md-4">
-        <div class="card text-center p-3">
-            <h2 class="text-info">{{ data.membres_actifs }}</h2>
-            <p class="text-muted mb-0">Membres actifs</p>
-        </div>
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:24px;">
+
+  <div style="background:#fff; border:0.5px solid #e0e0e0; border-radius:12px; padding:18px;">
+    <p style="font-size:14px; font-weight:500; color:#042C53; margin-bottom:14px;">Emprunts par mois</p>
+    {% for mois, val, pct in graphique_mois %}
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+      <span style="font-size:11px; color:#888780; width:28px;">{{ mois }}</span>
+      <div style="flex:1; height:8px; background:#E6F1FB; border-radius:4px;">
+        <div style="height:8px; width:{{ pct }}%; background:#185FA5; border-radius:4px;"></div></div>
+      <span style="font-size:11px; color:#888780; width:16px; text-align:right;">{{ val }}</span>
     </div>
-    <div class="col-md-4">
-        <div class="card text-center p-3">
-            <h2 class="text-primary">{{ data.nouveaux_ce_mois }}</h2>
-            <p class="text-muted mb-0">Nouveaux ce mois</p>
+    {% endfor %}
+  </div>
+
+  <div style="background:#fff; border:0.5px solid #e0e0e0; border-radius:12px; padding:18px;">
+    <p style="font-size:14px; font-weight:500; color:#042C53; margin-bottom:14px;">État des livres</p>
+    <div style="display:flex; align-items:center; gap:20px;">
+      <svg width="100" height="100" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="38" fill="none" stroke="#E6F1FB" stroke-width="16"/>
+        <circle cx="50" cy="50" r="38" fill="none" stroke="#185FA5" stroke-width="16"
+          stroke-dasharray="174 65" stroke-dashoffset="0" transform="rotate(-90 50 50)"/>
+        <circle cx="50" cy="50" r="38" fill="none" stroke="#E24B4A" stroke-width="16"
+          stroke-dasharray="65 174" stroke-dashoffset="-174" transform="rotate(-90 50 50)"/>
+        <text x="50" y="54" text-anchor="middle" font-size="14" font-weight="500" fill="#0C447C">73%</text>
+      </svg>
+      <div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;font-size:13px;color:#444;">
+          <div style="width:10px;height:10px;border-radius:50%;background:#185FA5;"></div>
+          Disponibles ({{ data.livres_disponibles }})
         </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card text-center p-3">
-            <h2 class="text-success">{{ data.retours_ce_mois }}</h2>
-            <p class="text-muted mb-0">Retours ce mois</p>
+        <div style="display:flex;align-items:center;gap:6px;font-size:13px;color:#444;">
+          <div style="width:10px;height:10px;border-radius:50%;background:#E24B4A;"></div>
+          Empruntés ({{ data.emprunts_en_cours }})
         </div>
+      </div>
     </div>
+  </div>
+
+</div>
+
+<div style="background:#fff; border:0.5px solid #e0e0e0; border-radius:12px; padding:18px;">
+  <p style="font-size:14px; font-weight:500; color:#042C53; margin-bottom:14px;">Derniers emprunts</p>
+  <table style="width:100%; border-collapse:collapse; font-size:13px;">
+    <thead>
+      <tr>
+        <th style="text-align:left; font-size:11px; color:#888780; font-weight:500; padding:6px 8px; border-bottom:0.5px solid #e0e0e0;">Étudiant</th>
+        <th style="text-align:left; font-size:11px; color:#888780; font-weight:500; padding:6px 8px; border-bottom:0.5px solid #e0e0e0;">Livre</th>
+        <th style="text-align:left; font-size:11px; color:#888780; font-weight:500; padding:6px 8px; border-bottom:0.5px solid #e0e0e0;">Date emprunt</th>
+        <th style="text-align:left; font-size:11px; color:#888780; font-weight:500; padding:6px 8px; border-bottom:0.5px solid #e0e0e0;">Statut</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for e in derniers_emprunts %}
+    <tr>
+      <td style="padding:8px; border-bottom:0.5px solid #f0f0f0; color:#042C53;">{{ e.etudiant }}</td>
+      <td style="padding:8px; border-bottom:0.5px solid #f0f0f0; color:#444;">{{ e.livre }}</td>
+      <td style="padding:8px; border-bottom:0.5px solid #f0f0f0; color:#888780;">{{ e.date }}</td>
+      <td style="padding:8px; border-bottom:0.5px solid #f0f0f0;">
+        {% if e.statut == "retard" %}
+          <span style="font-size:11px;padding:3px 8px;border-radius:8px;background:#FCEBEB;color:#A32D2D;font-weight:500;">Retard {{ e.jours }}j</span>
+        {% elif e.statut == "nouveau" %}
+          <span style="font-size:11px;padding:3px 8px;border-radius:8px;background:#E6F1FB;color:#185FA5;font-weight:500;">Nouveau</span>
+        {% else %}
+          <span style="font-size:11px;padding:3px 8px;border-radius:8px;background:#EAF3DE;color:#3B6D11;font-weight:500;">En cours</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
 </div>
 
 {% endblock %}

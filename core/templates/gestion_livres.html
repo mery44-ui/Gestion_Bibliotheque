@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block page_title %}Gestion des livres{% endblock %}
+{% block page_sub %}Ajouter, modifier ou supprimer des livres{% endblock %}
+{% block content %}
+
+<div style="background:#fff; border:0.5px solid #e0e0e0; border-radius:12px; padding:20px; margin-bottom:20px;">
+    <p style="font-size:14px; font-weight:500; color:#042C53; margin-bottom:14px;">Ajouter un livre</p>
+    <form method="POST">
+        {% csrf_token %}
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+            <input type="text" name="titre" placeholder="Titre du livre" style="padding:10px; border:0.5px solid #D3D1C7; border-radius:8px; font-size:14px;">
+            <input type="text" name="auteur" placeholder="Auteur" style="padding:10px; border:0.5px solid #D3D1C7; border-radius:8px; font-size:14px;">
+            <input type="text" name="categorie" placeholder="Catégorie" style="padding:10px; border:0.5px solid #D3D1C7; border-radius:8px; font-size:14px;">
+            <input type="text" name="isbn" placeholder="ISBN" style="padding:10px; border:0.5px solid #D3D1C7; border-radius:8px; font-size:14px;">
+        </div>
+        <button type="submit" style="background:#0C447C; color:#fff; border:none; border-radius:8px; padding:10px 20px; font-size:14px; cursor:pointer;">
+            <i class="ti ti-plus"></i> Ajouter
+        </button>
+    </form>
+</div>
+
+<div style="background:#fff; border:0.5px solid #e0e0e0; border-radius:12px; padding:20px;">
+    <p style="font-size:14px; font-weight:500; color:#042C53; margin-bottom:14px;">Liste des livres</p>
+    <table style="width:100%; border-collapse:collapse; font-size:13px;">
+        <thead>
+            <tr>
+                <th style="text-align:left; padding:8px; border-bottom:0.5px solid #e0e0e0; color:#888780; font-size:11px;">Titre</th>
+                <th style="text-align:left; padding:8px; border-bottom:0.5px solid #e0e0e0; color:#888780; font-size:11px;">Auteur</th>
+                <th style="text-align:left; padding:8px; border-bottom:0.5px solid #e0e0e0; color:#888780; font-size:11px;">Catégorie</th>
+                <th style="text-align:left; padding:8px; border-bottom:0.5px solid #e0e0e0; color:#888780; font-size:11px;">Disponibilité</th>
+                <th style="text-align:left; padding:8px; border-bottom:0.5px solid #e0e0e0; color:#888780; font-size:11px;">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for livre in livres %}
+        <tr>
+            <td style="padding:8px; border-bottom:0.5px solid #f0f0f0; color:#042C53;">{{ livre.titre }}</td>
+            <td style="padding:8px; border-bottom:0.5px solid #f0f0f0; color:#444;">{{ livre.auteur }}</td>
+            <td style="padding:8px; border-bottom:0.5px solid #f0f0f0; color:#444;">{{ livre.categorie }}</td>
+            <td style="padding:8px; border-bottom:0.5px solid #f0f0f0;">
+                {% if livre.disponible %}
+                    <span style="background:#EAF3DE; color:#3B6D11; font-size:11px; padding:3px 8px; border-radius:8px; font-weight:500;">Disponible</span>
+                {% else %}
+                    <span style="background:#FCEBEB; color:#A32D2D; font-size:11px; padding:3px 8px; border-radius:8px; font-weight:500;">Emprunté</span>
+                {% endif %}
+            </td>
+            <td style="padding:8px; border-bottom:0.5px solid #f0f0f0;">
+                <button style="background:#FCEBEB; color:#A32D2D; border:none; border-radius:6px; padding:5px 10px; font-size:12px; cursor:pointer;">
+                    <i class="ti ti-trash"></i> Supprimer
+                </button>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}
