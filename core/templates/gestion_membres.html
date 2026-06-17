@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+{% block title %}Gestion des membres{% endblock %}
+{% block page_title %}Gestion des membres{% endblock %}
+
+{% block sidebar_nav %}
+<div class="sidebar-section">Navigation</div>
+<a href="/gestion-livres/"><i class="fa-solid fa-book"></i> Gestion des livres</a>
+<a href="/gestion-membres/" class="active"><i class="fa-solid fa-users"></i> Gestion des membres</a>
+<a href="/gestion-emprunts/"><i class="fa-solid fa-book-bookmark"></i> Gestion des emprunts</a>
+<a href="/notifications/"><i class="fa-solid fa-triangle-exclamation"></i> Retards & Notifications</a>
+<a href="/import-excel/"><i class="fa-solid fa-file-arrow-up"></i> Import Excel</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .toolbar { display:flex; align-items:center; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+  .toolbar .search-bar { flex:1; min-width:200px; }
+  .modal-overlay {
+    display:none; position:fixed; inset:0;
+    background:rgba(0,0,0,0.4); z-index:200;
+    align-items:center; justify-content:center;
+  }
+  .modal-overlay.show { display:flex; }
+  .modal-box {
+    background:#fff; border-radius:14px;
+    padding:28px; width:480px;
+    box-shadow:0 10px 40px rgba(0,0,0,0.15);
+  }
+  .modal-box h3 { font-size:1rem; font-weight:700; margin-bottom:20px; }
+  .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .form-full { grid-column:1/-1; }
+  .modal-actions { display:flex; gap:10px; margin-top:20px; justify-content:flex-end; }
+  .divider-form {
+    grid-column:1/-1;
+    border:none; border-top:1px dashed #e5e7eb;
+    margin:4px 0;
+  }
+  .divider-label {
+    grid-column:1/-1;
+    font-size:0.75rem; font-weight:700;
+    color:#9ca3af; letter-spacing:1px;
+    text-transform:uppercase; margin-top:4px;
+  }
+  .member-avatar {
+    width:34px; height:34px; border-radius:50%;
+    background:#4f7ef8; color:#fff;
+    display:flex; align-items:center;
+    justify-content:center; font-weight:700; font-size:0.85rem;
+  }
+  .import-hint {
+    background:#eff6ff; border:1px solid #bfdbfe;
+    border-radius:8px; padding:10px 14px;
+    font-size:0.8rem; color:#1d4ed8;
+    margin-bottom:16px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .password-wrap { position:relative; }
+  .password-wrap input { padding-right:36px; }
+  .eye-btn {
+    position:absolute; right:10px; top:50%;
+    transform:translateY(-50%);
+    background:none; border:none;
+    cursor:pointer; color:#9ca3af;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Gestion des membres</h1>
+    <p>{{ membres|length }} membre(s) inscrit(s)</p>
+  </div>
+  <button class="btn-primary-custom" onclick="openModal()">
+    <i class="fa-solid fa-user-plus"></i> Ajouter un membre
+  </button>
+</div>
+
+<!-- IMPORT HINT -->
+<div class="import-hint">
+  <i class="fa-solid fa-circle-info"></i>
+  Pour importer plusieurs membres depuis Excel, utilisez
+  <a href="/import-excel/" style="font-weight:700;color:#1d4ed8;margin-left:4px;">
+    Import Excel <i class="fa-solid fa-arrow-right"></i>
+  </a>
+</div>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <div class="search-bar">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <input type="text" id="searchInput" placeholder="Rechercher un membre..."
+           oninput="filterTable()"/>
+  </div>
+</div>
+
+<!-- TABLE -->
+<div class="table-container">
+  <table id="membresTable">
+    <thead>
+      <tr>
+        <th>AVATAR</th>
+        <th>NOM COMPLET</th>
+        <th>EMAIL</th>
+        <th>TÉLÉPHONE</th>
+        <th>LOGIN</th>
+        <th>STATUT</th>
+        <th>ACTIONS</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for membre in membres %}
+      <tr>
+        <td>
+          <div class="member-avatar">{{ membre.nom|first|upper }}</div>
+        </td>
+        <td>
+          <div style="font-weight:600;">{{ membre.nom }} {{ membre.prenom }}</div>
+        </td>
+        <td style="color:#6b7280;font-size:0.83rem;">{{ membre.email }}</td>
+        <td style="color:#6b7280;font-size:0.83rem;">
+          {{ membre.telephone|default:"—" }}
+        </td>
+        <td style="font-size:0.83rem;">
+          {% if membre.utilisateur %}
+            <span style="background:#f3f4f6;padding:3px 8px;border-radius:6px;font-family:monospace;">
+              {{ membre.utilisateur.login }}
+            </span>
+          {% else %}
+            <span style="color:#9ca3af;">—</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if membre.utilisateur and membre.utilisateur.actif %}
+            <span class="badge-role badge-disponible">Actif</span>
+          {% else %}
+            <span class="badge-role badge-indisponible">Inactif</span>
+          {% endif %}
+        </td>
+        <td>
+          <a href="?suppr={{ membre.id }}"
+             onclick="return confirm('Supprimer {{ membre.nom }} {{ membre.prenom }} ?')">
+            <button class="btn-danger-custom">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="7" style="text-align:center;padding:40px;color:#9ca3af;">
+          <i class="fa-solid fa-users" style="font-size:1.8rem;display:block;margin-bottom:8px;"></i>
+          Aucun membre inscrit
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- MODAL AJOUTER MEMBRE -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <h3><i class="fa-solid fa-user-plus" style="color:#4f7ef8;"></i> Ajouter un membre</h3>
+    <form method="POST" action="/gestion-membres/">
+      {% csrf_token %}
+      <div class="form-grid">
+
+        <div class="divider-label">Informations personnelles</div>
+
+        <div>
+          <label class="form-label">Nom *</label>
+          <input type="text" name="nom" class="form-input" placeholder="Nom de famille" required/>
+        </div>
+        <div>
+          <label class="form-label">Prénom</label>
+          <input type="text" name="prenom" class="form-input" placeholder="Prénom"/>
+        </div>
+        <div>
+          <label class="form-label">Email *</label>
+          <input type="email" name="email" class="form-input" placeholder="email@exemple.com" required/>
+        </div>
+        <div>
+          <label class="form-label">Téléphone</label>
+          <input type="text" name="telephone" class="form-input" placeholder="06XXXXXXXX"/>
+        </div>
+
+        <hr class="divider-form"/>
+        <div class="divider-label">Compte d'accès</div>
+
+        <div>
+          <label class="form-label">Login *</label>
+          <input type="text" name="login" class="form-input" placeholder="Identifiant unique" required/>
+        </div>
+        <div>
+          <label class="form-label">Mot de passe *</label>
+          <div class="password-wrap">
+            <input type="password" name="password" id="mdpField"
+                   class="form-input" placeholder="Mot de passe" required/>
+            <button type="button" class="eye-btn" onclick="toggleMdp()">
+              <i class="fa-regular fa-eye" id="eyeIcon"></i>
+            </button>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-ghost" onclick="closeModal()">Annuler</button>
+        <button type="submit" class="btn-primary-custom">
+          <i class="fa-solid fa-check"></i> Ajouter
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openModal()  { document.getElementById('modalOverlay').classList.add('show'); }
+function closeModal() { document.getElementById('modalOverlay').classList.remove('show'); }
+document.getElementById('modalOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+function filterTable() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  document.querySelectorAll('#membresTable tbody tr').forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+function toggleMdp() {
+  const f = document.getElementById('mdpField');
+  const i = document.getElementById('eyeIcon');
+  f.type = f.type === 'password' ? 'text' : 'password';
+  i.classList.toggle('fa-eye');
+  i.classList.toggle('fa-eye-slash');
+}
+</script>
+{% endblock %}

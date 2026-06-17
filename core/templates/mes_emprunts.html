@@ -1,33 +1,159 @@
 {% extends 'base.html' %}
+{% block title %}Mes emprunts{% endblock %}
+{% block page_title %}Mes emprunts{% endblock %}
+
+{% block sidebar_nav %}
+<div class="sidebar-section">Navigation</div>
+<a href="/recherche/"><i class="fa-solid fa-magnifying-glass"></i> Rechercher un livre</a>
+<a href="/emprunts/" class="active">
+  <i class="fa-solid fa-book-bookmark"></i> Mes emprunts
+  {% if en_retard %}<span class="badge-count">{{ en_retard|length }}</span>{% endif %}
+</a>
+<a href="/fiche/"><i class="fa-solid fa-user"></i> Ma fiche</a>
+<a href="/changer-mot-de-passe/"><i class="fa-solid fa-key"></i> Changer mot de passe</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:24px; }
+  .stat-mini {
+    background:#fff; border:1px solid #e5e7eb;
+    border-radius:12px; padding:20px;
+    text-align:center;
+  }
+  .stat-mini .val { font-size:2rem; font-weight:800; line-height:1; }
+  .stat-mini .lbl { font-size:0.8rem; color:#6b7280; margin-top:4px; }
+  .retard-banner {
+    background:#fee2e2; border:1px solid #fca5a5;
+    border-radius:10px; padding:12px 16px;
+    font-size:0.85rem; color:#991b1b;
+    margin-bottom:20px;
+    display:flex; align-items:center;
+    justify-content:space-between; gap:12px;
+  }
+  .retard-banner .close-btn {
+    background:none; border:none;
+    cursor:pointer; color:#991b1b; font-size:1rem;
+  }
+  .book-avatar {
+    width:36px; height:48px; background:#f3f4f6;
+    border-radius:6px; display:flex;
+    align-items:center; justify-content:center;
+    color:#9ca3af; font-size:0.9rem; flex-shrink:0;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
+<div class="page-header">
+  <div>
+    <h1>Mes emprunts</h1>
+    <p>Historique complet de vos emprunts</p>
+  </div>
+</div>
 
-<h4 class="mb-4">📖 Mes Emprunts</h4>
-
-<table class="table table-hover">
-    <thead class="table-dark">
-        <tr>
-            <th>Livre</th>
-            <th>Date emprunt</th>
-            <th>Date retour prévue</th>
-            <th>Statut</th>
-        </tr>
-    </thead>
-    <tbody>
-    {% for emprunt in emprunts %}
-    <tr>
-        <td>{{ emprunt.livre }}</td>
-        <td>{{ emprunt.date_emprunt }}</td>
-        <td>{{ emprunt.date_retour }}</td>
-        <td>
-            {% if emprunt.retard > 0 %}
-                <span class="badge bg-danger">Retard {{ emprunt.retard }} jours</span>
-            {% else %}
-                <span class="badge bg-success">En cours</span>
-            {% endif %}
-        </td>
-    </tr>
+<!-- RETARD BANNER -->
+{% if en_retard %}
+<div class="retard-banner" id="retardBanner">
+  <div>
+    <i class="fa-solid fa-triangle-exclamation"></i>
+    <strong>{{ en_retard|length }} emprunt(s) en retard</strong> —
+    {% for r in en_retard %}
+      {{ r.livre.titre }}{% if not forloop.last %}, {% endif %}
     {% endfor %}
-    </tbody>
-</table>
+    — Veuillez les retourner rapidement.
+  </div>
+  <button class="close-btn" onclick="document.getElementById('retardBanner').style.display='none'">
+    <i class="fa-solid fa-xmark"></i>
+  </button>
+</div>
+{% endif %}
 
+<!-- STATS -->
+<div class="stats-row">
+  <div class="stat-mini">
+    <div class="val" style="color:#4f7ef8;">{{ en_cours|length }}</div>
+    <div class="lbl">En cours</div>
+  </div>
+  <div class="stat-mini">
+    <div class="val" style="color:#10b981;">{{ historique|length }}</div>
+    <div class="lbl">Retournés</div>
+  </div>
+  <div class="stat-mini">
+    <div class="val" style="color:{% if en_retard %}#ef4444{% else %}#10b981{% endif %};">
+      {{ en_retard|length }}
+    </div>
+    <div class="lbl">En retard</div>
+  </div>
+</div>
+
+<!-- HISTORIQUE -->
+<div class="card" style="padding:24px;">
+  <h3 style="font-size:0.95rem;font-weight:700;margin-bottom:16px;">
+    <i class="fa-solid fa-clock-rotate-left" style="color:#4f7ef8;"></i>
+    Historique des emprunts
+  </h3>
+  <div class="table-container" style="border:none;box-shadow:none;">
+    <table>
+      <thead>
+        <tr>
+          <th>LIVRE</th>
+          <th>DATE EMPRUNT</th>
+          <th>RETOUR PRÉVU</th>
+          <th>STATUT</th>
+          <th>RETARD</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in emprunts %}
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div class="book-avatar"><i class="fa-solid fa-book"></i></div>
+              <div>
+                <div style="font-weight:600;font-size:0.85rem;">{{ e.livre.titre }}</div>
+                <div style="font-size:0.75rem;color:#9ca3af;">{{ e.livre.auteur }}</div>
+              </div>
+            </div>
+          </td>
+          <td style="font-size:0.82rem;color:#6b7280;">{{ e.date_emprunt }}</td>
+          <td style="font-size:0.82rem;color:#6b7280;">{{ e.date_retour_prevue }}</td>
+          <td>
+            {% if e.rendu %}
+              <span class="badge-role badge-rendu">
+                <i class="fa-solid fa-circle-check"></i> Rendu
+              </span>
+            {% else %}
+              {% now "Y-m-d" as today_str %}
+              {% if e.date_retour_prevue|date:"Y-m-d" < today_str %}
+                <span class="badge-role badge-retard">
+                  <i class="fa-solid fa-triangle-exclamation"></i> EN RETARD
+                </span>
+              {% else %}
+                <span class="badge-role badge-en-cours">
+                  <i class="fa-solid fa-clock"></i> En cours
+                </span>
+              {% endif %}
+            {% endif %}
+          </td>
+          <td style="font-size:0.82rem;">
+            {% if e.retard > 0 %}
+              <span style="color:#ef4444;font-weight:700;">{{ e.retard }}j</span>
+            {% else %}
+              <span style="color:#10b981;">À temps</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" style="text-align:center;padding:40px;color:#9ca3af;">
+            <i class="fa-solid fa-book-open" style="font-size:1.8rem;display:block;margin-bottom:8px;"></i>
+            Aucun emprunt enregistré
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
 {% endblock %}

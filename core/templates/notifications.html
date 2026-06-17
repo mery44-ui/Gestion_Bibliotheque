@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% block title %}Retards & Notifications{% endblock %}
+{% block page_title %}Retards & Notifications{% endblock %}
+
+{% block sidebar_nav %}
+<div class="sidebar-section">Navigation</div>
+<a href="/gestion-livres/"><i class="fa-solid fa-book"></i> Gestion des livres</a>
+<a href="/gestion-membres/"><i class="fa-solid fa-users"></i> Gestion des membres</a>
+<a href="/gestion-emprunts/"><i class="fa-solid fa-book-bookmark"></i> Gestion des emprunts</a>
+<a href="/notifications/" class="active">
+  <i class="fa-solid fa-triangle-exclamation"></i> Retards & Notifications
+  {% if nb_retards %}<span class="badge-count">{{ nb_retards }}</span>{% endif %}
+</a>
+<a href="/import-excel/"><i class="fa-solid fa-file-arrow-up"></i> Import Excel</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .retard-banner-top {
+    background:#fff3cd; border:1px solid #fcd34d;
+    border-radius:10px; padding:12px 16px;
+    font-size:0.88rem; color:#92400e;
+    margin-bottom:20px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .retard-card {
+    background:#fff; border:1px solid #e5e7eb;
+    border-radius:12px; padding:18px;
+    display:flex; align-items:center; gap:16px;
+    margin-bottom:12px; transition:all 0.2s;
+  }
+  .retard-card:hover { border-color:#ef4444; box-shadow:0 2px 8px rgba(239,68,68,0.1); }
+  .retard-avatar {
+    width:44px; height:44px; border-radius:50%;
+    background:#fee2e2; color:#ef4444;
+    display:flex; align-items:center;
+    justify-content:center; font-size:1rem;
+    font-weight:700; flex-shrink:0;
+  }
+  .retard-info { flex:1; }
+  .retard-info .name { font-weight:700; font-size:0.95rem; margin-bottom:2px; }
+  .retard-info .book { font-size:0.82rem; color:#6b7280; }
+  .retard-info .date { font-size:0.75rem; color:#9ca3af; margin-top:2px; }
+  .retard-days {
+    font-size:1.4rem; font-weight:800;
+    color:#ef4444; text-align:center;
+    min-width:60px;
+  }
+  .retard-days span { display:block; font-size:0.7rem; font-weight:500; color:#9ca3af; }
+  .btn-notif {
+    background:#eff6ff; color:#4f7ef8;
+    border:1px solid #bfdbfe; border-radius:8px;
+    padding:8px 14px; font-size:0.82rem;
+    font-weight:600; cursor:pointer;
+    display:flex; align-items:center; gap:6px;
+    transition:all 0.2s; text-decoration:none;
+    white-space:nowrap;
+  }
+  .btn-notif:hover { background:#4f7ef8; color:#fff; }
+  .btn-notif-all {
+    background:#ef4444; color:#fff;
+    border:none; border-radius:8px;
+    padding:9px 18px; font-size:0.85rem;
+    font-weight:600; cursor:pointer;
+    display:flex; align-items:center; gap:8px;
+    transition:all 0.2s;
+  }
+  .btn-notif-all:hover { background:#dc2626; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Retards & Notifications</h1>
+    <p>{{ nb_retards }} emprunt(s) en retard</p>
+  </div>
+  {% if nb_retards %}
+  <a href="/notifier/">
+    <button class="btn-notif-all">
+      <i class="fa-solid fa-bell"></i> Notifier tous ({{ nb_retards }})
+    </button>
+  </a>
+  {% endif %}
+</div>
+
+{% if nb_retards %}
+<div class="retard-banner-top">
+  <i class="fa-solid fa-triangle-exclamation"></i>
+  <strong>{{ nb_retards }} emprunt(s) en retard</strong> —
+  Envoyez des notifications aux étudiants concernés.
+</div>
+
+{% for e in retards %}
+{% with jours=e.date_retour_prevue|timesince %}
+<div class="retard-card">
+  <div class="retard-avatar">{{ e.etudiant.nom|first|upper }}</div>
+  <div class="retard-info">
+    <div class="name">{{ e.etudiant.nom }} {{ e.etudiant.prenom }}</div>
+    <div class="book">
+      <i class="fa-solid fa-book" style="color:#9ca3af;"></i>
+      {{ e.livre.titre }}
+    </div>
+    <div class="date">Prévu le {{ e.date_retour_prevue }}</div>
+  </div>
+  <div class="retard-days">
+    {{ e.date_retour_prevue|timesince|truncatewords:1 }}
+    <span>jours</span>
+  </div>
+  <a href="/notifier/?emprunt={{ e.id }}" class="btn-notif">
+    <i class="fa-solid fa-bell"></i> Notifier
+  </a>
+</div>
+{% endwith %}
+{% endfor %}
+
+{% else %}
+<div style="text-align:center;padding:60px;color:#9ca3af;">
+  <i class="fa-solid fa-circle-check"
+     style="font-size:3rem;color:#10b981;display:block;margin-bottom:16px;"></i>
+  <h3 style="font-weight:700;color:#1e2235;margin-bottom:8px;">
+    Aucun retard !
+  </h3>
+  <p style="font-size:0.88rem;">
+    Tous les emprunts sont à jour.
+  </p>
+</div>
+{% endif %}
+{% endblock %}

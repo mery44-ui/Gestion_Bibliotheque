@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+{% block title %}Ma fiche{% endblock %}
+{% block page_title %}Ma fiche{% endblock %}
+
+{% block sidebar_nav %}
+<div class="sidebar-section">Navigation</div>
+<a href="/recherche/"><i class="fa-solid fa-magnifying-glass"></i> Rechercher un livre</a>
+<a href="/emprunts/">
+  <i class="fa-solid fa-book-bookmark"></i> Mes emprunts
+  {% if en_retard %}<span class="badge-count">{{ en_retard|length }}</span>{% endif %}
+</a>
+<a href="/fiche/" class="active"><i class="fa-solid fa-user"></i> Ma fiche</a>
+<a href="/changer-mot-de-passe/"><i class="fa-solid fa-key"></i> Changer mot de passe</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .fiche-layout { display:grid; grid-template-columns:320px 1fr; gap:20px; }
+  .profile-card {
+    background:#fff; border:1px solid #e5e7eb;
+    border-radius:14px; overflow:hidden;
+  }
+  .profile-banner {
+    height:80px;
+    background:linear-gradient(135deg,#4f7ef8,#8b5cf6);
+  }
+  .profile-body { padding:0 20px 20px; }
+  .profile-avatar-wrap {
+    margin-top:-28px; margin-bottom:12px;
+  }
+  .profile-avatar {
+    width:56px; height:56px; border-radius:50%;
+    background:#4f7ef8; color:#fff;
+    display:flex; align-items:center;
+    justify-content:center; font-size:1.4rem;
+    font-weight:800; border:3px solid #fff;
+    box-shadow:0 2px 8px rgba(0,0,0,0.1);
+  }
+  .profile-name { font-size:1.1rem; font-weight:700; margin-bottom:2px; }
+  .profile-role {
+    display:inline-block; font-size:0.75rem;
+    background:#eff6ff; color:#4f7ef8;
+    padding:2px 10px; border-radius:20px;
+    font-weight:600; margin-bottom:16px;
+  }
+  .profile-info-row {
+    display:flex; align-items:center; gap:10px;
+    font-size:0.83rem; color:#6b7280;
+    margin-bottom:10px;
+  }
+  .profile-info-row i { color:#9ca3af; width:16px; text-align:center; }
+  .profile-status {
+    display:flex; align-items:center; gap:6px;
+    font-size:0.82rem; margin-top:14px;
+    padding-top:14px; border-top:1px solid #f3f4f6;
+  }
+  .status-dot {
+    width:8px; height:8px; border-radius:50%;
+  }
+  .status-dot.active { background:#10b981; }
+  .status-dot.inactive { background:#9ca3af; }
+
+  .stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:20px; }
+  .stat-mini {
+    background:#fff; border:1px solid #e5e7eb;
+    border-radius:10px; padding:14px;
+    text-align:center;
+  }
+  .stat-mini .val { font-size:1.6rem; font-weight:800; line-height:1; }
+  .stat-mini .lbl { font-size:0.75rem; color:#6b7280; margin-top:4px; }
+
+  .activity-item {
+    display:flex; align-items:center; gap:12px;
+    padding:10px 0; border-bottom:1px solid #f3f4f6;
+  }
+  .activity-item:last-child { border-bottom:none; }
+  .activity-book {
+    width:36px; height:48px; background:#f3f4f6;
+    border-radius:6px; display:flex;
+    align-items:center; justify-content:center;
+    color:#9ca3af; flex-shrink:0; font-size:0.9rem;
+  }
+  .activity-info { flex:1; }
+  .activity-info .title { font-size:0.85rem; font-weight:600; }
+  .activity-info .author { font-size:0.75rem; color:#9ca3af; }
+  .activity-date { font-size:0.75rem; color:#9ca3af; text-align:right; }
+  .activity-status { font-size:0.75rem; font-weight:700; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Ma fiche</h1>
+    <p>Vos informations personnelles et activité</p>
+  </div>
+</div>
+
+{% if etudiant %}
+<div class="fiche-layout">
+
+  <!-- PROFIL CARD -->
+  <div>
+    <div class="profile-card">
+      <div class="profile-banner"></div>
+      <div class="profile-body">
+        <div class="profile-avatar-wrap">
+          <div class="profile-avatar">
+            {{ etudiant.nom|first|upper }}
+          </div>
+        </div>
+        <div class="profile-name">{{ etudiant.nom }} {{ etudiant.prenom }}</div>
+        <div class="profile-role">Étudiant</div>
+
+        <div class="profile-info-row">
+          <i class="fa-regular fa-envelope"></i>
+          {{ etudiant.email }}
+        </div>
+        {% if etudiant.telephone %}
+        <div class="profile-info-row">
+          <i class="fa-solid fa-phone"></i>
+          {{ etudiant.telephone }}
+        </div>
+        {% endif %}
+        {% if etudiant.utilisateur %}
+        <div class="profile-info-row">
+          <i class="fa-solid fa-at"></i>
+          {{ etudiant.utilisateur.login }}
+        </div>
+        {% endif %}
+
+        <div class="profile-status">
+          {% if etudiant.utilisateur and etudiant.utilisateur.actif %}
+            <div class="status-dot active"></div>
+            <span style="color:#10b981;font-weight:600;">Compte actif</span>
+          {% else %}
+            <div class="status-dot inactive"></div>
+            <span style="color:#9ca3af;">Compte inactif</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- CHANGER MDP RACCOURCI -->
+    <a href="/changer-mot-de-passe/" style="text-decoration:none;">
+      <div style="margin-top:12px;background:#fff;border:1px solid #e5e7eb;
+                  border-radius:10px;padding:14px;display:flex;
+                  align-items:center;gap:10px;cursor:pointer;
+                  transition:all 0.2s;" 
+           onmouseover="this.style.borderColor='#4f7ef8'"
+           onmouseout="this.style.borderColor='#e5e7eb'">
+        <div style="width:36px;height:36px;background:#eff6ff;border-radius:8px;
+                    display:flex;align-items:center;justify-content:center;color:#4f7ef8;">
+          <i class="fa-solid fa-key"></i>
+        </div>
+        <div>
+          <div style="font-size:0.85rem;font-weight:600;">Changer le mot de passe</div>
+          <div style="font-size:0.75rem;color:#9ca3af;">Modifier votre mot de passe</div>
+        </div>
+        <i class="fa-solid fa-chevron-right" style="margin-left:auto;color:#9ca3af;font-size:0.8rem;"></i>
+      </div>
+    </a>
+  </div>
+
+  <!-- ACTIVITÉ -->
+  <div>
+    <!-- STATS -->
+    <div class="stats-row">
+      <div class="stat-mini">
+        <div class="val" style="color:#4f7ef8;">{{ emprunts|length }}</div>
+        <div class="lbl">Emprunts total</div>
+      </div>
+      <div class="stat-mini">
+        <div class="val" style="color:#10b981;">{{ en_cours|length }}</div>
+        <div class="lbl">En cours</div>
+      </div>
+      <div class="stat-mini">
+        <div class="val" style="color:{% if en_retard %}#ef4444{% else %}#10b981{% endif %};">
+          {{ en_retard|length }}
+        </div>
+        <div class="lbl">En retard</div>
+      </div>
+    </div>
+
+    <!-- ACTIVITÉ RÉCENTE -->
+    <div class="card" style="padding:20px;">
+      <h3 style="font-size:0.92rem;font-weight:700;margin-bottom:16px;">
+        <i class="fa-solid fa-clock-rotate-left" style="color:#4f7ef8;"></i>
+        Activité récente
+      </h3>
+      {% for e in emprunts %}
+      <div class="activity-item">
+        <div class="activity-book">
+          <i class="fa-solid fa-book"></i>
+        </div>
+        <div class="activity-info">
+          <div class="title">{{ e.livre.titre }}</div>
+          <div class="author">{{ e.livre.auteur }}</div>
+        </div>
+        <div style="text-align:right;">
+          {% if e.rendu %}
+            <div class="activity-status" style="color:#10b981;">Rendu</div>
+          {% else %}
+            {% now "Y-m-d" as today_str %}
+            {% if e.date_retour_prevue|date:"Y-m-d" < today_str %}
+              <div class="activity-status" style="color:#ef4444;">Retard</div>
+            {% else %}
+              <div class="activity-status" style="color:#4f7ef8;">En cours</div>
+            {% endif %}
+          {% endif %}
+          <div class="activity-date">{{ e.date_emprunt }}</div>
+        </div>
+      </div>
+      {% empty %}
+      <div style="text-align:center;padding:30px 0;color:#9ca3af;font-size:0.85rem;">
+        Aucune activité pour le moment
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{% else %}
+<div style="text-align:center;padding:60px;color:#9ca3af;">
+  <i class="fa-solid fa-user-slash" style="font-size:2.5rem;display:block;margin-bottom:12px;"></i>
+  <p>Fiche introuvable. Contactez le bibliothécaire.</p>
+</div>
+{% endif %}
+{% endblock %}

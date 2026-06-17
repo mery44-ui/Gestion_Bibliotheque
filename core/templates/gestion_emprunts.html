@@ -1,0 +1,268 @@
+{% extends 'base.html' %}
+{% block title %}Gestion des emprunts{% endblock %}
+{% block page_title %}Gestion des emprunts{% endblock %}
+
+{% block sidebar_nav %}
+<div class="sidebar-section">Navigation</div>
+<a href="/gestion-livres/"><i class="fa-solid fa-book"></i> Gestion des livres</a>
+<a href="/gestion-membres/"><i class="fa-solid fa-users"></i> Gestion des membres</a>
+<a href="/gestion-emprunts/" class="active">
+  <i class="fa-solid fa-book-bookmark"></i> Gestion des emprunts
+  {% if emprunts %}<span class="badge-count">{{ emprunts|length }}</span>{% endif %}
+</a>
+<a href="/notifications/">
+  <i class="fa-solid fa-triangle-exclamation"></i> Retards & Notifications
+  {% if nb_retards %}<span class="badge-count">{{ nb_retards }}</span>{% endif %}
+</a>
+<a href="/import-excel/"><i class="fa-solid fa-file-arrow-up"></i> Import Excel</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .tabs { display:flex; gap:0; margin-bottom:20px; border-bottom:2px solid #e5e7eb; }
+  .tab-btn {
+    padding:10px 20px; font-size:0.88rem; font-weight:600;
+    border:none; background:none; cursor:pointer;
+    color:#6b7280; border-bottom:2px solid transparent;
+    margin-bottom:-2px; transition:all 0.2s;
+    display:flex; align-items:center; gap:8px;
+  }
+  .tab-btn.active { color:#4f7ef8; border-bottom-color:#4f7ef8; }
+  .tab-btn:hover:not(.active) { color:#1e2235; }
+  .tab-count {
+    background:#e5e7eb; color:#6b7280;
+    font-size:0.72rem; padding:1px 7px;
+    border-radius:10px; font-weight:700;
+  }
+  .tab-count.blue { background:#dbeafe; color:#1d4ed8; }
+  .tab-panel { display:none; }
+  .tab-panel.active { display:block; }
+
+  .nouvel-form {
+    background:#fff; border:1px solid #e5e7eb;
+    border-radius:12px; padding:24px;
+    display:grid; grid-template-columns:1fr 1fr 1fr auto;
+    gap:14px; align-items:flex-end;
+  }
+  .jours-badge {
+    padding:4px 10px; border-radius:20px;
+    font-size:0.78rem; font-weight:700;
+    display:inline-block;
+  }
+  .jours-ok    { background:#d1fae5; color:#065f46; }
+  .jours-warn  { background:#fef3c7; color:#92400e; }
+  .jours-retard { background:#fee2e2; color:#991b1b; }
+
+  .retour-modal {
+    display:none; position:fixed; inset:0;
+    background:rgba(0,0,0,0.4); z-index:200;
+    align-items:center; justify-content:center;
+  }
+  .retour-modal.show { display:flex; }
+  .retour-box {
+    background:#fff; border-radius:14px;
+    padding:28px; width:400px;
+    box-shadow:0 10px 40px rgba(0,0,0,0.15);
+  }
+  .retour-box h3 { font-size:1rem; font-weight:700; margin-bottom:20px; }
+  .modal-actions { display:flex; gap:10px; margin-top:20px; justify-content:flex-end; }
+  .emprunt-avatar {
+    width:32px; height:32px; border-radius:50%;
+    background:#4f7ef8; color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-size:0.8rem; font-weight:700; flex-shrink:0;
+  }
+  .retard-alert {
+    background:#fee2e2; border:1px solid #fca5a5;
+    border-radius:8px; padding:10px 14px;
+    font-size:0.82rem; color:#991b1b;
+    margin-bottom:16px;
+    display:flex; align-items:center; gap:8px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Gestion des emprunts</h1>
+    <p>{{ emprunts|length }} emprunt(s) en cours</p>
+  </div>
+</div>
+
+{% if nb_retards %}
+<div class="retard-alert">
+  <i class="fa-solid fa-triangle-exclamation"></i>
+  <strong>{{ nb_retards }} emprunt(s) en retard</strong> —
+  <a href="/notifications/" style="color:#991b1b;font-weight:700;">
+    Envoyer les notifications <i class="fa-solid fa-arrow-right"></i>
+  </a>
+</div>
+{% endif %}
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('nouveau', this)">
+    <i class="fa-solid fa-plus"></i> Nouvel emprunt
+  </button>
+  <button class="tab-btn" onclick="switchTab('encours', this)">
+    <i class="fa-solid fa-clock"></i> Emprunts en cours
+    <span class="tab-count blue">{{ emprunts|length }}</span>
+  </button>
+</div>
+
+<!-- TAB: NOUVEL EMPRUNT -->
+<div id="tab-nouveau" class="tab-panel active">
+  <form method="POST" action="/gestion-emprunts/">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="emprunt"/>
+    <div class="nouvel-form">
+      <div>
+        <label class="form-label">Étudiant *</label>
+        <select name="etudiant_id" class="form-input" required>
+          <option value="">Sélectionner un étudiant</option>
+          {% for e in etudiants %}
+          <option value="{{ e.id }}">{{ e.nom }} {{ e.prenom }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Livre *</label>
+        <select name="livre_id" class="form-input" required>
+          <option value="">Sélectionner un livre</option>
+          {% for l in livres %}
+          <option value="{{ l.id }}">{{ l.titre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Date de retour prévue *</label>
+        <input type="date" name="date_retour" class="form-input" required/>
+      </div>
+      <button type="submit" class="btn-primary-custom" style="white-space:nowrap;">
+        <i class="fa-solid fa-plus"></i> Enregistrer
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- TAB: EMPRUNTS EN COURS -->
+<div id="tab-encours" class="tab-panel">
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>ÉTUDIANT</th>
+          <th>LIVRE</th>
+          <th>EMPRUNTÉ LE</th>
+          <th>RETOUR PRÉVU</th>
+          <th>JOURS</th>
+          <th>RETOUR</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in emprunts %}
+        {% with today=e.date_retour_prevue %}
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div class="emprunt-avatar">{{ e.etudiant.nom|first|upper }}</div>
+              <div>
+                <div style="font-weight:600;">{{ e.etudiant.nom }} {{ e.etudiant.prenom }}</div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div style="font-weight:600;font-size:0.85rem;">{{ e.livre.titre }}</div>
+          </td>
+          <td style="color:#6b7280;font-size:0.82rem;">{{ e.date_emprunt }}</td>
+          <td style="font-size:0.82rem;">{{ e.date_retour_prevue }}</td>
+          <td>
+            {% now "Y-m-d" as today_str %}
+            {% if e.date_retour_prevue|date:"Y-m-d" < today_str %}
+              <span class="jours-badge jours-retard">
+                EN RETARD
+              </span>
+            {% else %}
+              <span class="jours-badge jours-ok">
+                À temps
+              </span>
+            {% endif %}
+          </td>
+          <td>
+            <button class="btn-primary-custom"
+              style="padding:5px 12px;font-size:0.78rem;"
+              onclick="openRetour('{{ e.id }}','{{ e.etudiant.nom }} {{ e.etudiant.prenom }}','{{ e.livre.titre }}')">
+              <i class="fa-solid fa-rotate-left"></i> Retour
+            </button>
+          </td>
+        </tr>
+        {% endwith %}
+        {% empty %}
+        <tr>
+          <td colspan="6" style="text-align:center;padding:40px;color:#9ca3af;">
+            <i class="fa-solid fa-circle-check" style="color:#10b981;font-size:1.8rem;display:block;margin-bottom:8px;"></i>
+            Aucun emprunt en cours
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MODAL RETOUR -->
+<div class="retour-modal" id="retourModal">
+  <div class="retour-box">
+    <h3><i class="fa-solid fa-rotate-left" style="color:#4f7ef8;"></i> Enregistrer un retour</h3>
+    <form method="POST" action="/gestion-emprunts/">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="retour"/>
+      <input type="hidden" name="emprunt_id" id="retourId"/>
+
+      <div style="background:#f9fafb;border-radius:8px;padding:12px;margin-bottom:16px;font-size:0.85rem;">
+        <div><strong>Étudiant :</strong> <span id="retourEtudiant"></span></div>
+        <div style="margin-top:4px;"><strong>Livre :</strong> <span id="retourLivre"></span></div>
+      </div>
+
+      <div>
+        <label class="form-label">Date de retour effective *</label>
+        <input type="date" name="date_retour_effectif" class="form-input" required/>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-ghost" onclick="closeRetour()">Annuler</button>
+        <button type="submit" class="btn-primary-custom">
+          <i class="fa-solid fa-check"></i> Confirmer le retour
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+function openRetour(id, etudiant, livre) {
+  document.getElementById('retourId').value        = id;
+  document.getElementById('retourEtudiant').textContent = etudiant;
+  document.getElementById('retourLivre').textContent    = livre;
+  // Set today as default date
+  const today = new Date().toISOString().split('T')[0];
+  document.querySelector('[name="date_retour_effectif"]').value = today;
+  document.getElementById('retourModal').classList.add('show');
+}
+function closeRetour() {
+  document.getElementById('retourModal').classList.remove('show');
+}
+document.getElementById('retourModal').addEventListener('click', function(e) {
+  if (e.target === this) closeRetour();
+});
+</script>
+{% endblock %}

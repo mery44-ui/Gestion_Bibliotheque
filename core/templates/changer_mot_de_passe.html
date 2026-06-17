@@ -1,0 +1,286 @@
+{% extends 'base.html' %}
+{% block title %}Changer mot de passe{% endblock %}
+{% block page_title %}Changer mot de passe{% endblock %}
+
+{% block sidebar_nav %}
+<div class="sidebar-section">Navigation</div>
+<a href="/recherche/"><i class="fa-solid fa-magnifying-glass"></i> Rechercher un livre</a>
+<a href="/emprunts/"><i class="fa-solid fa-book-bookmark"></i> Mes emprunts</a>
+<a href="/fiche/"><i class="fa-solid fa-user"></i> Ma fiche</a>
+<a href="/changer-mot-de-passe/" class="active"><i class="fa-solid fa-key"></i> Changer mot de passe</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .mdp-layout {
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  .mdp-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 32px;
+  }
+  .mdp-header {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+  .mdp-icon {
+    width: 56px; height: 56px;
+    background: #eff6ff;
+    border-radius: 14px;
+    display: flex; align-items: center;
+    justify-content: center;
+    margin: 0 auto 14px;
+    font-size: 1.4rem;
+    color: #4f7ef8;
+  }
+  .mdp-header h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 4px; }
+  .mdp-header p  { font-size: 0.82rem; color: #6b7280; }
+
+  .form-group { margin-bottom: 18px; }
+  .input-wrap { position: relative; }
+  .input-wrap i.icon-left {
+    position: absolute; left: 12px; top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af; font-size: 0.9rem;
+  }
+  .input-wrap input {
+    width: 100%;
+    padding: 10px 40px 10px 36px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px; font-size: 0.88rem;
+    outline: none; transition: border 0.2s;
+  }
+  .input-wrap input:focus {
+    border-color: #4f7ef8;
+    box-shadow: 0 0 0 3px rgba(79,126,248,0.1);
+  }
+  .eye-btn {
+    position: absolute; right: 10px; top: 50%;
+    transform: translateY(-50%);
+    background: none; border: none;
+    cursor: pointer; color: #9ca3af; font-size: 0.9rem;
+  }
+
+  .strength-bar {
+    height: 4px; border-radius: 4px;
+    background: #e5e7eb; margin-top: 6px;
+    overflow: hidden;
+  }
+  .strength-fill {
+    height: 100%; border-radius: 4px;
+    transition: all 0.3s; width: 0%;
+  }
+  .strength-label {
+    font-size: 0.72rem; margin-top: 4px;
+    font-weight: 600;
+  }
+
+  .rules-list {
+    background: #f9fafb; border-radius: 8px;
+    padding: 12px 14px; margin-bottom: 20px;
+    font-size: 0.78rem; color: #6b7280;
+  }
+  .rules-list .rule {
+    display: flex; align-items: center;
+    gap: 6px; margin-bottom: 4px;
+  }
+  .rules-list .rule:last-child { margin-bottom: 0; }
+  .rules-list .rule i { font-size: 0.7rem; }
+  .rules-list .rule.ok  { color: #10b981; }
+  .rules-list .rule.bad { color: #9ca3af; }
+
+  .btn-submit {
+    width: 100%; padding: 11px;
+    background: #4f7ef8; color: #fff;
+    border: none; border-radius: 8px;
+    font-size: 0.92rem; font-weight: 600;
+    cursor: pointer; transition: background 0.2s;
+    display: flex; align-items: center;
+    justify-content: center; gap: 8px;
+  }
+  .btn-submit:hover { background: #3b6fe8; }
+  .btn-submit:disabled { background: #d1d5db; cursor: not-allowed; }
+
+  .divider { border: none; border-top: 1px solid #f3f4f6; margin: 20px 0; }
+
+  .back-link {
+    display: flex; align-items: center; justify-content: center;
+    gap: 6px; color: #6b7280; font-size: 0.82rem;
+    text-decoration: none; margin-top: 14px;
+  }
+  .back-link:hover { color: #4f7ef8; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mdp-layout">
+  <div class="mdp-card">
+
+    <div class="mdp-header">
+      <div class="mdp-icon">
+        <i class="fa-solid fa-key"></i>
+      </div>
+      <h2>Changer le mot de passe</h2>
+      <p>Sécurisez votre compte avec un nouveau mot de passe</p>
+    </div>
+
+    <form method="POST" action="/changer-mot-de-passe/" onsubmit="return valider()">
+      {% csrf_token %}
+
+      <!-- MOT DE PASSE ACTUEL -->
+      <div class="form-group">
+        <label class="form-label">Mot de passe actuel</label>
+        <div class="input-wrap">
+          <i class="fa-solid fa-lock icon-left"></i>
+          <input type="password" name="ancien_mdp" id="ancienMdp"
+                 placeholder="Votre mot de passe actuel" required/>
+          <button type="button" class="eye-btn" onclick="toggleVis('ancienMdp','eye1')">
+            <i class="fa-regular fa-eye" id="eye1"></i>
+          </button>
+        </div>
+      </div>
+
+      <hr class="divider"/>
+
+      <!-- NOUVEAU MOT DE PASSE -->
+      <div class="form-group">
+        <label class="form-label">Nouveau mot de passe</label>
+        <div class="input-wrap">
+          <i class="fa-solid fa-lock icon-left"></i>
+          <input type="password" name="nouveau_mdp" id="nouveauMdp"
+                 placeholder="Entrez un nouveau mot de passe"
+                 oninput="evalForce()" required/>
+          <button type="button" class="eye-btn" onclick="toggleVis('nouveauMdp','eye2')">
+            <i class="fa-regular fa-eye" id="eye2"></i>
+          </button>
+        </div>
+        <!-- BARRE DE FORCE -->
+        <div class="strength-bar">
+          <div class="strength-fill" id="strengthFill"></div>
+        </div>
+        <div class="strength-label" id="strengthLabel" style="color:#9ca3af;">
+          Saisissez un mot de passe
+        </div>
+      </div>
+
+      <!-- CONFIRMER -->
+      <div class="form-group">
+        <label class="form-label">Confirmer le mot de passe</label>
+        <div class="input-wrap">
+          <i class="fa-solid fa-lock icon-left"></i>
+          <input type="password" name="confirmer_mdp" id="confirmerMdp"
+                 placeholder="Répétez le nouveau mot de passe"
+                 oninput="checkMatch()" required/>
+          <button type="button" class="eye-btn" onclick="toggleVis('confirmerMdp','eye3')">
+            <i class="fa-regular fa-eye" id="eye3"></i>
+          </button>
+        </div>
+        <div id="matchMsg" style="font-size:0.75rem;margin-top:4px;"></div>
+      </div>
+
+      <!-- RÈGLES -->
+      <div class="rules-list">
+        <div class="rule bad" id="ruleLen">
+          <i class="fa-solid fa-circle"></i> Au moins 4 caractères
+        </div>
+        <div class="rule bad" id="ruleMatch">
+          <i class="fa-solid fa-circle"></i> Les deux mots de passe correspondent
+        </div>
+      </div>
+
+      <button type="submit" class="btn-submit" id="submitBtn">
+        <i class="fa-solid fa-check"></i> Enregistrer le nouveau mot de passe
+      </button>
+    </form>
+
+    <a href="/fiche/" class="back-link">
+      <i class="fa-solid fa-arrow-left"></i> Retour à ma fiche
+    </a>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleVis(fieldId, iconId) {
+  const f = document.getElementById(fieldId);
+  const i = document.getElementById(iconId);
+  f.type = f.type === 'password' ? 'text' : 'password';
+  i.classList.toggle('fa-eye');
+  i.classList.toggle('fa-eye-slash');
+}
+
+function evalForce() {
+  const val  = document.getElementById('nouveauMdp').value;
+  const fill = document.getElementById('strengthFill');
+  const lbl  = document.getElementById('strengthLabel');
+  const rule = document.getElementById('ruleLen');
+
+  let score = 0;
+  if (val.length >= 4)  score++;
+  if (val.length >= 8)  score++;
+  if (/[A-Z]/.test(val)) score++;
+  if (/[0-9]/.test(val)) score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+
+  const levels = [
+    { pct:'0%',   color:'#e5e7eb', label:'Saisissez un mot de passe', labelColor:'#9ca3af' },
+    { pct:'25%',  color:'#ef4444', label:'Faible',    labelColor:'#ef4444' },
+    { pct:'50%',  color:'#f59e0b', label:'Moyen',     labelColor:'#f59e0b' },
+    { pct:'75%',  color:'#4f7ef8', label:'Bon',       labelColor:'#4f7ef8' },
+    { pct:'100%', color:'#10b981', label:'Excellent',  labelColor:'#10b981' },
+  ];
+  const lvl = levels[Math.min(score, 4)];
+  fill.style.width      = lvl.pct;
+  fill.style.background = lvl.color;
+  lbl.textContent       = lvl.label;
+  lbl.style.color       = lvl.labelColor;
+
+  if (val.length >= 4) {
+    rule.classList.replace('bad','ok');
+    rule.querySelector('i').className = 'fa-solid fa-circle-check';
+  } else {
+    rule.classList.replace('ok','bad');
+    rule.querySelector('i').className = 'fa-solid fa-circle';
+  }
+  checkMatch();
+}
+
+function checkMatch() {
+  const n = document.getElementById('nouveauMdp').value;
+  const c = document.getElementById('confirmerMdp').value;
+  const msg  = document.getElementById('matchMsg');
+  const rule = document.getElementById('ruleMatch');
+
+  if (!c) { msg.textContent = ''; return; }
+
+  if (n === c) {
+    msg.innerHTML = '<span style="color:#10b981;"><i class="fa-solid fa-check"></i> Correspondent</span>';
+    rule.classList.replace('bad','ok');
+    rule.querySelector('i').className = 'fa-solid fa-circle-check';
+  } else {
+    msg.innerHTML = '<span style="color:#ef4444;"><i class="fa-solid fa-xmark"></i> Ne correspondent pas</span>';
+    rule.classList.replace('ok','bad');
+    rule.querySelector('i').className = 'fa-solid fa-circle';
+  }
+}
+
+function valider() {
+  const n = document.getElementById('nouveauMdp').value;
+  const c = document.getElementById('confirmerMdp').value;
+  if (n.length < 4) {
+    alert('Le mot de passe doit contenir au moins 4 caractères.');
+    return false;
+  }
+  if (n !== c) {
+    alert('Les deux mots de passe ne correspondent pas.');
+    return false;
+  }
+  return true;
+}
+</script>
+{% endblock %}

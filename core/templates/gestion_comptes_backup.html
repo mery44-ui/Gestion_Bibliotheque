@@ -1,0 +1,224 @@
+{% extends 'base.html' %}
+{% block title %}Gestion des comptes{% endblock %}
+{% block page_title %}Gestion des comptes{% endblock %}
+
+{% block sidebar_nav %}
+<div class="sidebar-section">Administration</div>
+<a href="/dashboard/"><i class="fa-solid fa-chart-pie"></i> Tableau de bord</a>
+<a href="/comptes/" class="active"><i class="fa-solid fa-users-gear"></i> Gestion des comptes</a>
+<a href="/rapport/"><i class="fa-solid fa-file-lines"></i> Rapports</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .filter-tabs { display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap; align-items:center; }
+  .filter-tab {
+    padding:6px 16px; border-radius:20px; border:1px solid #e5e7eb;
+    font-size:0.82rem; font-weight:600; cursor:pointer;
+    background:#fff; color:#6b7280; transition:all 0.2s; text-decoration:none;
+  }
+  .filter-tab.active { background:#4f7ef8; color:#fff; border-color:#4f7ef8; }
+  .filter-tab:hover:not(.active) { border-color:#4f7ef8; color:#4f7ef8; }
+  .search-right { margin-left:auto; }
+  .search-input {
+    display:flex; align-items:center; gap:8px;
+    background:#fff; border:1px solid #e5e7eb;
+    border-radius:8px; padding:7px 12px;
+  }
+  .search-input input { border:none; outline:none; font-size:0.83rem; width:180px; }
+  .avatar-cell {
+    width:34px; height:34px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:700; font-size:0.85rem; color:#fff;
+  }
+  .modal-overlay {
+    display:none; position:fixed; inset:0;
+    background:rgba(0,0,0,0.4); z-index:200;
+    align-items:center; justify-content:center;
+  }
+  .modal-overlay.show { display:flex; }
+  .modal-box {
+    background:#fff; border-radius:14px;
+    padding:28px; width:400px;
+    box-shadow:0 10px 40px rgba(0,0,0,0.15);
+  }
+  .modal-box h3 { font-size:1rem; font-weight:700; margin-bottom:20px; }
+  .modal-form-group { margin-bottom:14px; }
+  .modal-actions { display:flex; gap:10px; margin-top:20px; justify-content:flex-end; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Gestion des comptes</h1>
+    <p>Gérer les accès et les rôles des utilisateurs</p>
+  </div>
+</div>
+
+<!-- FILTER TABS + SEARCH -->
+<div class="filter-tabs">
+  <a href="?role=" class="filter-tab {% if not request.GET.role %}active{% endif %}">
+    Tous ({{ comptes|length }})
+  </a>
+  <a href="?role=etudiant" class="filter-tab {% if request.GET.role == 'etudiant' %}active{% endif %}">
+    Étudiant
+  </a>
+  <a href="?role=bibliothecaire" class="filter-tab {% if request.GET.role == 'bibliothecaire' %}active{% endif %}">
+    Bibliothécaire
+  </a>
+  <a href="?role=administrateur" class="filter-tab {% if request.GET.role == 'administrateur' %}active{% endif %}">
+    Admin
+  </a>
+  <div class="search-right">
+    <div class="search-input">
+      <i class="fa-solid fa-magnifying-glass" style="color:#9ca3af;"></i>
+      <input type="text" id="searchInput" placeholder="Rechercher..." oninput="filterTable()"/>
+    </div>
+  </div>
+</div>
+
+<!-- TABLE -->
+<div class="table-container">
+  <table id="compteTable">
+    <thead>
+      <tr>
+        <th>AVATAR</th>
+        <th>NOM</th>
+        <th>LOGIN</th>
+        <th>RÔLE</th>
+        <th>STATUT</th>
+        <th>ACTIONS</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in comptes %}
+      {% with obj=c.obj nom=c.nom_complet %}
+      {% if not request.GET.role or obj.role == request.GET.role %}
+      <tr>
+        <td>
+          <div class="avatar-cell"
+            style="background:
+              {% if obj.role == 'etudiant' %}#4f7ef8
+              {% elif obj.role == 'bibliothecaire' %}#f59e0b
+              {% else %}#8b5cf6{% endif %}">
+            {{ nom|first|upper }}
+          </div>
+        </td>
+        <td>
+          <div style="font-weight:600;">{{ nom }}</div>
+          <div style="font-size:0.75rem;color:#9ca3af;">{{ obj.login }}</div>
+        </td>
+        <td style="color:#6b7280;">{{ obj.login }}</td>
+        <td>
+          <span class="badge-role
+            {% if obj.role == 'etudiant' %}badge-etudiant
+            {% elif obj.role == 'bibliothecaire' %}badge-bibliothecaire
+            {% else %}badge-administrateur{% endif %}">
+            {{ obj.role|capfirst }}
+          </span>
+        </td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <a href="?toggle={{ obj.id }}" onclick="return confirm('Changer le statut ?')">
+              <label class="toggle-switch" style="cursor:pointer;">
+                <input type="checkbox" {% if obj.actif %}checked{% endif %} onclick="return false;"/>
+                <span class="toggle-slider"></span>
+              </label>
+            </a>
+                    {% if not obj.actif %}
+<a href="?debloquer={{ obj.id }}"
+   onclick="return confirm('Débloquer ce compte ?')">
+  <button style="background:#d1fae5;color:#065f46;border:none;
+                 border-radius:6px;padding:5px 10px;cursor:pointer;
+                 font-size:0.78rem;">
+    <i class="fa-solid fa-lock-open"></i>
+  </button>
+</a>
+{% endif %}
+            <span style="font-size:0.78rem;color:{% if obj.actif %}#10b981{% else %}#9ca3af{% endif %};">
+              {% if obj.actif %}Actif{% else %}Inactif{% endif %}
+            </span>
+          </div>
+        </td>
+
+        <td>
+          <div style="display:flex;gap:6px;">
+            <button class="btn-ghost" style="padding:5px 10px;font-size:0.78rem;"
+              onclick="openModal('{{ obj.id }}','{{ obj.login }}','{{ obj.role }}',{{ obj.actif|yesno:'true,false' }})">
+              <i class="fa-solid fa-pen"></i>
+            </button>
+            <a href="?suppr={{ obj.id }}" onclick="return confirm('Supprimer ce compte ?')">
+              <button class="btn-danger-custom" style="padding:5px 10px;">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </a>
+          </div>
+        </td>
+      </tr>
+      {% endif %}
+      {% endwith %}
+      {% empty %}
+      <tr><td colspan="6" style="text-align:center;color:#9ca3af;padding:30px;">Aucun compte</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- MODAL MODIFIER -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <h3><i class="fa-solid fa-pen" style="color:#4f7ef8;"></i> Modifier le compte</h3>
+    <form method="POST" action="/comptes/">
+      {% csrf_token %}
+      <input type="hidden" name="compte_id" id="modalId"/>
+      <div class="modal-form-group">
+        <label class="form-label">Login</label>
+        <input type="text" name="nouveau_login" id="modalLogin" class="form-input"/>
+      </div>
+      <div class="modal-form-group">
+        <label class="form-label">Rôle</label>
+        <select name="nouveau_role" id="modalRole" class="form-input">
+          <option value="etudiant">Étudiant</option>
+          <option value="bibliothecaire">Bibliothécaire</option>
+          <option value="administrateur">Administrateur</option>
+        </select>
+      </div>
+      <div class="modal-form-group" style="display:flex;align-items:center;gap:10px;">
+        <input type="checkbox" name="actif" id="modalActif"/>
+        <label for="modalActif" style="font-size:0.85rem;font-weight:600;">Compte actif</label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-ghost" onclick="closeModal()">Annuler</button>
+        <button type="submit" class="btn-primary-custom">
+          <i class="fa-solid fa-check"></i> Enregistrer
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openModal(id, login, role, actif) {
+  document.getElementById('modalId').value    = id;
+  document.getElementById('modalLogin').value = login;
+  document.getElementById('modalRole').value  = role;
+  document.getElementById('modalActif').checked = actif;
+  document.getElementById('modalOverlay').classList.add('show');
+}
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('show');
+}
+document.getElementById('modalOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+function filterTable() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  document.querySelectorAll('#compteTable tbody tr').forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+{% block title %}Import Excel{% endblock %}
+{% block page_title %}Import Excel{% endblock %}
+
+{% block sidebar_nav %}
+<div class="sidebar-section">Navigation</div>
+<a href="/gestion-livres/"><i class="fa-solid fa-book"></i> Gestion des livres</a>
+<a href="/gestion-membres/"><i class="fa-solid fa-users"></i> Gestion des membres</a>
+<a href="/gestion-emprunts/"><i class="fa-solid fa-book-bookmark"></i> Gestion des emprunts</a>
+<a href="/notifications/"><i class="fa-solid fa-triangle-exclamation"></i> Retards & Notifications</a>
+<a href="/import-excel/" class="active"><i class="fa-solid fa-file-arrow-up"></i> Import Excel</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .import-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .import-card {
+    background:#fff; border:1px solid #e5e7eb;
+    border-radius:14px; padding:28px; text-align:center;
+  }
+  .import-icon {
+    width:64px; height:64px; border-radius:16px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.6rem; margin:0 auto 16px;
+  }
+  .import-card h3 { font-size:1rem; font-weight:700; margin-bottom:6px; }
+  .import-card p  { font-size:0.82rem; color:#6b7280; margin-bottom:20px; }
+  .upload-zone {
+    border:2px dashed #e5e7eb; border-radius:10px;
+    padding:24px 16px; cursor:pointer;
+    transition:all 0.2s; margin-bottom:14px;
+    position:relative;
+  }
+  .upload-zone:hover { border-color:#4f7ef8; background:#f8faff; }
+  .upload-zone input[type=file] {
+    position:absolute; inset:0; opacity:0;
+    cursor:pointer; width:100%; height:100%;
+  }
+  .upload-zone .up-icon { font-size:1.8rem; color:#9ca3af; margin-bottom:8px; }
+  .upload-zone .up-text { font-size:0.82rem; color:#6b7280; }
+  .upload-zone .up-text strong { color:#4f7ef8; }
+  .upload-zone .up-formats { font-size:0.72rem; color:#9ca3af; margin-top:4px; }
+  .file-name {
+    font-size:0.8rem; color:#4f7ef8; font-weight:600;
+    margin-bottom:10px; display:none;
+    background:#eff6ff; padding:6px 10px; border-radius:6px;
+  }
+  .format-info {
+    background:#f9fafb; border:1px solid #e5e7eb;
+    border-radius:10px; padding:16px;
+    margin-top:20px; text-align:left;
+  }
+  .format-info h4 { font-size:0.82rem; font-weight:700; margin-bottom:10px; }
+  .col-tag {
+    display:inline-block; background:#eff6ff; color:#4f7ef8;
+    font-size:0.72rem; padding:2px 8px; border-radius:6px;
+    margin:2px; font-family:monospace;
+  }
+  .col-tag.required { background:#fee2e2; color:#991b1b; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Import Excel</h1>
+    <p>Importer des livres ou des membres depuis un fichier Excel</p>
+  </div>
+</div>
+
+<div class="import-grid">
+
+  <!-- IMPORT LIVRES -->
+  <div class="import-card">
+    <div class="import-icon" style="background:#eff6ff;color:#4f7ef8;">
+      <i class="fa-solid fa-book"></i>
+    </div>
+    <h3>Import de livres</h3>
+    <p>Importez plusieurs livres en une seule fois depuis un fichier Excel</p>
+
+    <form method="POST" action="/import-livres/" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="upload-zone" id="zoneL">
+        <input type="file" name="fichier_excel" id="fileL"
+               accept=".xlsx,.xls"
+               onchange="showName(this,'nameL')"/>
+        <div class="up-icon"><i class="fa-solid fa-arrow-up-from-bracket"></i></div>
+        <div class="up-text">
+          <strong>Cliquez</strong> ou glissez votre fichier ici
+        </div>
+        <div class="up-formats">Formats : .xlsx, .xls</div>
+      </div>
+      <div class="file-name" id="nameL"></div>
+      <button type="submit" class="btn-primary-custom"
+              style="width:100%;justify-content:center;padding:10px;">
+        <i class="fa-solid fa-file-import"></i> Importer les livres
+      </button>
+    </form>
+
+    <div class="format-info">
+      <h4><i class="fa-solid fa-table" style="color:#4f7ef8;"></i> Colonnes Excel</h4>
+      <div>
+        <span class="col-tag required">titre *</span>
+        <span class="col-tag required">auteur *</span>
+        <span class="col-tag">isbn</span>
+        <span class="col-tag">categorie</span>
+      </div>
+      <p style="font-size:0.72rem;color:#9ca3af;margin-top:8px;">
+        * Obligatoires — Lignes vides ignorées automatiquement
+      </p>
+    </div>
+  </div>
+
+  <!-- IMPORT MEMBRES -->
+  <div class="import-card">
+    <div class="import-icon" style="background:#f0fdf4;color:#10b981;">
+      <i class="fa-solid fa-users"></i>
+    </div>
+    <h3>Import de membres</h3>
+    <p>Importez plusieurs étudiants en une seule fois depuis un fichier Excel</p>
+
+    <form method="POST" action="/import-etudiants/" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="upload-zone" id="zoneM">
+        <input type="file" name="fichier_excel" id="fileM"
+               accept=".xlsx,.xls"
+               onchange="showName(this,'nameM')"/>
+        <div class="up-icon"><i class="fa-solid fa-arrow-up-from-bracket"></i></div>
+        <div class="up-text">
+          <strong>Cliquez</strong> ou glissez votre fichier ici
+        </div>
+        <div class="up-formats">Formats : .xlsx, .xls</div>
+      </div>
+      <div class="file-name" id="nameM"></div>
+      <button type="submit" class="btn-primary-custom"
+              style="width:100%;justify-content:center;padding:10px;background:#10b981;">
+        <i class="fa-solid fa-file-import"></i> Importer les membres
+      </button>
+    </form>
+
+    <div class="format-info">
+      <h4><i class="fa-solid fa-table" style="color:#10b981;"></i> Colonnes Excel</h4>
+      <div>
+        <span class="col-tag required">nom *</span>
+        <span class="col-tag required">email *</span>
+        <span class="col-tag required">login *</span>
+        <span class="col-tag required">password *</span>
+        <span class="col-tag">prenom</span>
+        <span class="col-tag">telephone</span>
+      </div>
+      <p style="font-size:0.72rem;color:#9ca3af;margin-top:8px;">
+        * Obligatoires — Lignes vides ignorées automatiquement
+      </p>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showName(input, nameId) {
+  const el = document.getElementById(nameId);
+  if (input.files.length > 0) {
+    el.textContent = '📎 ' + input.files[0].name;
+    el.style.display = 'block';
+  }
+}
+</script>
+{% endblock %}

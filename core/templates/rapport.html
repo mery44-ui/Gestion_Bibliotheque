@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+{% block title %}Rapports{% endblock %}
+{% block page_title %}Rapports{% endblock %}
+
+{% block sidebar_nav %}
+<div class="sidebar-section">Administration</div>
+<a href="/dashboard/"><i class="fa-solid fa-chart-pie"></i> Tableau de bord</a>
+<a href="/comptes/"><i class="fa-solid fa-users-gear"></i> Gestion des comptes</a>
+<a href="/rapport/" class="active"><i class="fa-solid fa-file-lines"></i> Rapports</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .rapport-layout { display:grid; grid-template-columns:1fr 1.4fr; gap:20px; }
+  .radio-option {
+    display:flex; align-items:flex-start; gap:12px;
+    padding:14px; border:2px solid #e5e7eb;
+    border-radius:10px; cursor:pointer;
+    transition:all 0.2s; margin-bottom:10px;
+  }
+  .radio-option:hover { border-color:#4f7ef8; background:#f8faff; }
+  .radio-option.selected { border-color:#4f7ef8; background:#eff6ff; }
+  .radio-option input { margin-top:3px; accent-color:#4f7ef8; }
+  .radio-option .opt-title { font-size:0.88rem; font-weight:600; margin-bottom:2px; }
+  .radio-option .opt-desc { font-size:0.75rem; color:#9ca3af; }
+  .date-range { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:16px 0; }
+  .rapport-actions-cell { display:flex; gap:6px; }
+  .btn-view {
+    background:#eff6ff; color:#4f7ef8;
+    border:none; border-radius:6px;
+    padding:5px 10px; font-size:0.78rem;
+    cursor:pointer; transition:all 0.2s;
+    display:flex; align-items:center; gap:4px;
+  }
+  .btn-view:hover { background:#4f7ef8; color:#fff; }
+  .btn-pdf {
+    background:#f0fdf4; color:#10b981;
+    border:none; border-radius:6px;
+    padding:5px 10px; font-size:0.78rem;
+    cursor:pointer; transition:all 0.2s;
+    text-decoration:none;
+    display:flex; align-items:center; gap:4px;
+  }
+  .btn-pdf:hover { background:#10b981; color:#fff; }
+  .contenu-modal {
+    display:none; position:fixed; inset:0;
+    background:rgba(0,0,0,0.4); z-index:200;
+    align-items:center; justify-content:center;
+  }
+  .contenu-modal.show { display:flex; }
+  .contenu-box {
+    background:#fff; border-radius:14px;
+    padding:28px; width:520px; max-height:80vh;
+    overflow-y:auto;
+    box-shadow:0 10px 40px rgba(0,0,0,0.15);
+  }
+  .contenu-box pre {
+    background:#f9fafb; border-radius:8px;
+    padding:16px; font-size:0.82rem;
+    white-space:pre-wrap; line-height:1.7;
+    border:1px solid #e5e7eb;
+  }
+  .type-icon { display:flex; align-items:center; gap:8px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Rapports</h1>
+    <p>Générer et consulter les rapports de la bibliothèque</p>
+  </div>
+</div>
+
+<div class="rapport-layout">
+
+  <!-- GÉNÉRER UN RAPPORT -->
+  <div class="card" style="padding:24px;">
+    <h3 style="font-size:1rem;font-weight:700;margin-bottom:20px;">
+      <i class="fa-solid fa-file-circle-plus" style="color:#4f7ef8;"></i>
+      Générer un rapport
+    </h3>
+    <form method="POST" action="/rapport/">
+      {% csrf_token %}
+
+      <label class="radio-option" id="opt-emprunts">
+        <input type="radio" name="type_rapport" value="emprunts" checked
+               onchange="selectOpt('emprunts')"/>
+        <div>
+          <div class="opt-title">
+            <i class="fa-solid fa-book-bookmark" style="color:#4f7ef8;"></i>
+            Rapport des emprunts
+          </div>
+          <div class="opt-desc">Liste des emprunts avec statuts et détails</div>
+        </div>
+      </label>
+
+      <label class="radio-option" id="opt-retards">
+        <input type="radio" name="type_rapport" value="retards"
+               onchange="selectOpt('retards')"/>
+        <div>
+          <div class="opt-title">
+            <i class="fa-solid fa-triangle-exclamation" style="color:#ef4444;"></i>
+            Rapport des retards
+          </div>
+          <div class="opt-desc">Livres en retard et amendes potentielles</div>
+        </div>
+      </label>
+
+      <label class="radio-option" id="opt-membres">
+        <input type="radio" name="type_rapport" value="membres"
+               onchange="selectOpt('membres')"/>
+        <div>
+          <div class="opt-title">
+            <i class="fa-solid fa-users" style="color:#10b981;"></i>
+            Liste des membres
+          </div>
+          <div class="opt-desc">Tous les membres inscrits et leurs activités</div>
+        </div>
+      </label>
+
+      <div class="date-range">
+        <div>
+          <label class="form-label">Du</label>
+          <input type="date" class="form-input" name="date_debut"/>
+        </div>
+        <div>
+          <label class="form-label">Au</label>
+          <input type="date" class="form-input" name="date_fin"/>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-primary-custom" style="width:100%;justify-content:center;padding:11px;">
+        <i class="fa-solid fa-file-export"></i> Générer le rapport
+      </button>
+    </form>
+  </div>
+
+  <!-- HISTORIQUE DES RAPPORTS -->
+  <div class="card" style="padding:24px;">
+    <h3 style="font-size:1rem;font-weight:700;margin-bottom:20px;">
+      <i class="fa-solid fa-clock-rotate-left" style="color:#8b5cf6;"></i>
+      Historique des rapports
+    </h3>
+
+    {% if rapports %}
+    <div class="table-container" style="border:none;box-shadow:none;">
+      <table>
+        <thead>
+          <tr>
+            <th>TYPE</th>
+            <th>DATE</th>
+            <th>ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rapports %}
+          <tr>
+            <td>
+              <div class="type-icon">
+                <i class="fa-solid fa-file-lines"
+                   style="color:{% if r.type == 'emprunts' %}#4f7ef8{% elif r.type == 'retards' %}#ef4444{% else %}#10b981{% endif %};"></i>
+                {{ r.get_type_display }}
+              </div>
+            </td>
+            <td style="color:#6b7280;font-size:0.82rem;">
+              {{ r.date_generation|date:"d/m/Y H:i" }}
+            </td>
+            <td>
+              <div class="rapport-actions-cell">
+                <button class="btn-view" onclick="voirRapport(`{{ r.contenu|escapejs }}`)">
+                  <i class="fa-regular fa-eye"></i> Voir
+                </button>
+                <a href="/rapport-pdf/{{ r.id }}/" class="btn-pdf">
+                  <i class="fa-solid fa-file-arrow-down"></i> PDF
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:40px 0;color:#9ca3af;">
+      <i class="fa-solid fa-file-circle-xmark" style="font-size:2rem;margin-bottom:12px;display:block;"></i>
+      Aucun rapport généré
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- MODAL CONTENU RAPPORT -->
+<div class="contenu-modal" id="contenuModal">
+  <div class="contenu-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 style="font-size:1rem;font-weight:700;">
+        <i class="fa-solid fa-file-lines" style="color:#4f7ef8;"></i> Contenu du rapport
+      </h3>
+      <button onclick="fermerModal()" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:#9ca3af;">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <pre id="contenuTexte"></pre>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function selectOpt(id) {
+  document.querySelectorAll('.radio-option').forEach(el => el.classList.remove('selected'));
+  document.getElementById('opt-' + id).classList.add('selected');
+}
+selectOpt('emprunts');
+
+function voirRapport(texte) {
+  document.getElementById('contenuTexte').textContent = texte;
+  document.getElementById('contenuModal').classList.add('show');
+}
+function fermerModal() {
+  document.getElementById('contenuModal').classList.remove('show');
+}
+document.getElementById('contenuModal').addEventListener('click', function(e) {
+  if (e.target === this) fermerModal();
+});
+</script>
+{% endblock %}

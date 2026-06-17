@@ -1,41 +1,271 @@
 {% extends 'base.html' %}
+{% block title %}Rechercher un livre{% endblock %}
+{% block page_title %}Rechercher un livre{% endblock %}
+
+{% block sidebar_nav %}
+<div class="sidebar-section">Navigation</div>
+<a href="/recherche/" class="active"><i class="fa-solid fa-magnifying-glass"></i> Rechercher un livre</a>
+<a href="/emprunts/">
+  <i class="fa-solid fa-book-bookmark"></i> Mes emprunts
+</a>
+<a href="/fiche/"><i class="fa-solid fa-user"></i> Ma fiche</a>
+<a href="/changer-mot-de-passe/"><i class="fa-solid fa-key"></i> Changer mot de passe</a>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  .search-toolbar {
+    display:flex; gap:12px; margin-bottom:24px;
+    align-items:center; flex-wrap:wrap;
+  }
+  .search-toolbar .search-bar { flex:1; min-width:250px; }
+  .select-filter {
+    padding:9px 12px; border:1px solid #e5e7eb;
+    border-radius:8px; font-size:0.83rem;
+    background:#fff; outline:none; cursor:pointer;
+  }
+  .results-info {
+    font-size:0.82rem; color:#6b7280;
+    margin-bottom:16px;
+  }
+  .books-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(200px, 1fr));
+    gap:16px;
+  }
+  .book-card {
+    background:#fff; border:1px solid #e5e7eb;
+    border-radius:12px; overflow:hidden;
+    transition:all 0.2s; cursor:pointer;
+  }
+  .book-card:hover {
+    transform:translateY(-3px);
+    box-shadow:0 8px 24px rgba(0,0,0,0.1);
+    border-color:#4f7ef8;
+  }
+  .book-cover {
+    height:160px; background:#f3f4f6;
+    display:flex; align-items:center;
+    justify-content:center; position:relative;
+  }
+  .book-cover i { font-size:3rem; color:#d1d5db; }
+  .book-cover .status-badge {
+    position:absolute; top:10px; left:10px;
+    padding:3px 9px; border-radius:20px;
+    font-size:0.7rem; font-weight:700;
+    display:flex; align-items:center; gap:4px;
+  }
+  .book-cover .dispo   { background:#d1fae5; color:#065f46; }
+  .book-cover .indispo { background:#fee2e2; color:#991b1b; }
+  .book-info { padding:14px; }
+  .book-info .book-title {
+    font-weight:700; font-size:0.9rem;
+    margin-bottom:4px; line-height:1.3;
+    display:-webkit-box; -webkit-line-clamp:2;
+    -webkit-box-orient:vertical; overflow:hidden;
+  }
+  .book-info .book-author {
+    font-size:0.78rem; color:#6b7280; margin-bottom:8px;
+  }
+  .book-info .book-cat {
+    font-size:0.72rem; padding:2px 8px;
+    border-radius:10px; background:#eff6ff;
+    color:#4f7ef8; display:inline-block;
+    margin-bottom:10px;
+  }
+  .book-info .book-isbn {
+    font-size:0.72rem; color:#9ca3af;
+    font-family:monospace;
+  }
+  .btn-detail {
+    display:block; text-align:center;
+    background:#4f7ef8; color:#fff;
+    border:none; border-radius:7px;
+    padding:7px; font-size:0.82rem;
+    font-weight:600; cursor:pointer;
+    width:100%; margin-top:10px;
+    transition:background 0.2s;
+  }
+  .btn-detail:hover { background:#3b6fe8; }
+  .btn-detail.indispo {
+    background:#f3f4f6; color:#9ca3af; cursor:default;
+  }
+
+  /* Modal détail livre */
+  .detail-modal {
+    display:none; position:fixed; inset:0;
+    background:rgba(0,0,0,0.4); z-index:200;
+    align-items:center; justify-content:center;
+  }
+  .detail-modal.show { display:flex; }
+  .detail-box {
+    background:#fff; border-radius:14px;
+    padding:28px; width:440px;
+    box-shadow:0 10px 40px rgba(0,0,0,0.15);
+  }
+  .detail-header { display:flex; gap:16px; margin-bottom:20px; align-items:flex-start; }
+  .detail-cover {
+    width:70px; height:90px; background:#f3f4f6;
+    border-radius:8px; display:flex;
+    align-items:center; justify-content:center;
+    flex-shrink:0; color:#d1d5db; font-size:1.8rem;
+  }
+  .detail-info .detail-title { font-size:1.05rem; font-weight:700; margin-bottom:4px; }
+  .detail-info .detail-author { font-size:0.85rem; color:#6b7280; margin-bottom:8px; }
+  .detail-row {
+    display:flex; justify-content:space-between;
+    padding:8px 0; border-bottom:1px solid #f3f4f6;
+    font-size:0.83rem;
+  }
+  .detail-row:last-child { border-bottom:none; }
+  .detail-row .lbl { color:#6b7280; }
+  .detail-row .val { font-weight:600; }
+  .empty-state {
+    text-align:center; padding:60px 20px;
+    color:#9ca3af;
+  }
+  .empty-state i { font-size:3rem; display:block; margin-bottom:12px; }
+  .empty-state p { font-size:0.88rem; }
+</style>
+{% endblock %}
+
 {% block content %}
+<div class="page-header">
+  <div>
+    <h1>Rechercher un livre</h1>
+    <p>Parcourez la collection de la bibliothèque</p>
+  </div>
+</div>
 
-<h4 class="mb-4">🔍 Rechercher un livre</h4>
-
-<form method="GET" class="mb-4">
-    <div class="input-group">
-        <input type="text" name="q" class="form-control" 
-               placeholder="Titre, auteur..." value="{{ query }}">
-        <button class="btn btn-primary">Rechercher</button>
+<!-- SEARCH TOOLBAR -->
+<form method="GET" action="/recherche/">
+  <div class="search-toolbar">
+    <div class="search-bar">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" name="q" value="{{ query }}"
+             placeholder="Rechercher par titre, auteur..."/>
     </div>
+    <select name="cat" class="select-filter" onchange="this.form.submit()">
+      <option value="">Toutes catégories</option>
+      {% for c in categories %}
+        <option value="{{ c }}" {% if c == cat %}selected{% endif %}>{{ c }}</option>
+      {% endfor %}
+    </select>
+    <select name="dispo" class="select-filter" onchange="this.form.submit()">
+      <option value="">Tous</option>
+      <option value="1" {% if dispo_only %}selected{% endif %}>Disponibles</option>
+    </select>
+    <button type="submit" class="btn-primary-custom">
+      <i class="fa-solid fa-magnifying-glass"></i> Rechercher
+    </button>
+  </div>
 </form>
 
-<table class="table table-hover">
-    <thead class="table-dark">
-        <tr>
-            <th>Titre</th>
-            <th>Auteur</th>
-            <th>Catégorie</th>
-            <th>Disponibilité</th>
-        </tr>
-    </thead>
-    <tbody>
-    {% for livre in livres %}
-    <tr>
-        <td>{{ livre.titre }}</td>
-        <td>{{ livre.auteur }}</td>
-        <td>{{ livre.categorie }}</td>
-        <td>
-            {% if livre.disponible %}
-                <span class="badge bg-success">Disponible</span>
-            {% else %}
-                <span class="badge bg-danger">Emprunté</span>
-            {% endif %}
-        </td>
-    </tr>
-    {% endfor %}
-    </tbody>
-</table>
+<div class="results-info">
+  <strong>{{ livres|length }}</strong> résultat(s)
+  {% if query %} pour "<em>{{ query }}</em>"{% endif %}
+  {% if cat %} dans "<em>{{ cat }}</em>"{% endif %}
+</div>
 
+<!-- BOOKS GRID -->
+{% if livres %}
+<div class="books-grid">
+  {% for livre in livres %}
+  <div class="book-card" onclick="voirDetail(
+    '{{ livre.titre|escapejs }}',
+    '{{ livre.auteur|escapejs }}',
+    '{{ livre.categorie|escapejs }}',
+    '{{ livre.isbn|escapejs }}',
+    {{ livre.disponible|yesno:'true,false' }}
+  )">
+    <div class="book-cover">
+      <i class="fa-solid fa-book"></i>
+      <div class="status-badge {% if livre.disponible %}dispo{% else %}indispo{% endif %}">
+        <i class="fa-solid fa-circle" style="font-size:0.45rem;"></i>
+        {% if livre.disponible %}Disponible{% else %}Indisponible{% endif %}
+      </div>
+    </div>
+    <div class="book-info">
+      <div class="book-title">{{ livre.titre }}</div>
+      <div class="book-author">{{ livre.auteur }}</div>
+      {% if livre.categorie %}
+      <div class="book-cat">{{ livre.categorie }}</div>
+      {% endif %}
+      <button class="btn-detail {% if not livre.disponible %}indispo{% endif %}">
+        {% if livre.disponible %}Voir détails{% else %}Indisponible{% endif %}
+      </button>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <i class="fa-solid fa-book-open"></i>
+  <p>Aucun livre trouvé{% if query %} pour "{{ query }}"{% endif %}</p>
+  <a href="/recherche/" style="color:#4f7ef8;font-size:0.85rem;">
+    Effacer la recherche
+  </a>
+</div>
+{% endif %}
+
+<!-- MODAL DETAIL -->
+<div class="detail-modal" id="detailModal">
+  <div class="detail-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 style="font-size:1rem;font-weight:700;">Détails du livre</h3>
+      <button onclick="fermerDetail()"
+        style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:#9ca3af;">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="detail-header">
+      <div class="detail-cover"><i class="fa-solid fa-book"></i></div>
+      <div class="detail-info">
+        <div class="detail-title" id="dTitre"></div>
+        <div class="detail-author" id="dAuteur"></div>
+        <div id="dStatutBadge"></div>
+      </div>
+    </div>
+    <div class="detail-row">
+      <span class="lbl">Catégorie</span>
+      <span class="val" id="dCat">—</span>
+    </div>
+    <div class="detail-row">
+      <span class="lbl">ISBN</span>
+      <span class="val" id="dIsbn" style="font-family:monospace;">—</span>
+    </div>
+    <div class="detail-row">
+      <span class="lbl">Statut</span>
+      <span class="val" id="dStatut"></span>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function voirDetail(titre, auteur, cat, isbn, dispo) {
+  document.getElementById('dTitre').textContent  = titre;
+  document.getElementById('dAuteur').textContent = auteur;
+  document.getElementById('dCat').textContent    = cat  || '—';
+  document.getElementById('dIsbn').textContent   = isbn || '—';
+
+  const statut = document.getElementById('dStatut');
+  const badge  = document.getElementById('dStatutBadge');
+  if (dispo) {
+    statut.innerHTML = '<span style="color:#065f46;font-weight:700;">✓ Disponible</span>';
+    badge.innerHTML  = '<span class="badge-role badge-disponible">Disponible</span>';
+  } else {
+    statut.innerHTML = '<span style="color:#991b1b;font-weight:700;">✗ Indisponible</span>';
+    badge.innerHTML  = '<span class="badge-role badge-indisponible">Indisponible</span>';
+  }
+  document.getElementById('detailModal').classList.add('show');
+}
+function fermerDetail() {
+  document.getElementById('detailModal').classList.remove('show');
+}
+document.getElementById('detailModal').addEventListener('click', function(e) {
+  if (e.target === this) fermerDetail();
+});
+</script>
 {% endblock %}
