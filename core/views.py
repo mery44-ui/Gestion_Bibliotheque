@@ -109,6 +109,45 @@ def changer_mot_de_passe(request):
     return render(request, 'changer_mot_de_passe.html')
 
 
+def mot_de_passe_oublie(request):
+    if request.method == 'POST':
+        login = request.POST.get('login', '').strip()
+        email = request.POST.get('email', '').strip()
+        cin = request.POST.get('cin', '').strip()
+        nouveau_mdp = request.POST.get('nouveau_mdp', '').strip()
+        confirmer_mdp = request.POST.get('confirmer_mdp', '').strip()
+
+        try:
+            if not login or not email or not cin or not nouveau_mdp or not confirmer_mdp:
+                raise ValueError("Tous les champs sont obligatoires.")
+            
+            if len(nouveau_mdp) < 4:
+                raise ValueError("Le nouveau mot de passe doit contenir au moins 4 caractères.")
+            
+            if nouveau_mdp != confirmer_mdp:
+                raise ValueError("Les deux mots de passe ne correspondent pas.")
+            
+            # Rechercher l'étudiant ayant cet email, ce CIN, et ce login de compte
+            try:
+                etudiant = Etudiant.objects.get(email__iexact=email, cin__iexact=cin, utilisateur__login__iexact=login)
+            except Etudiant.DoesNotExist:
+                raise ValueError("Les informations fournies ne correspondent à aucun étudiant enregistré.")
+            
+            user = etudiant.utilisateur
+            if not user:
+                raise ValueError("Compte d'accès introuvable pour cet étudiant.")
+                
+            user.mot_de_passe = nouveau_mdp
+            user.save()
+            messages.success(request, "Votre mot de passe a été réinitialisé avec succès ! Connectez-vous avec vos nouveaux identifiants.")
+            return redirect('/login/')
+            
+        except ValueError as e:
+            messages.error(request, str(e))
+            
+    return render(request, 'mot_de_passe_oublie.html')
+
+
 # ══════════════════════════════════════════════════════════════
 #  RECHERCHE LIVRES (Étudiant)
 # ══════════════════════════════════════════════════════════════
@@ -341,14 +380,17 @@ def gestion_membres(request):
         prenom    = request.POST.get('prenom', '').strip()
         email     = request.POST.get('email', '').strip()
         telephone = request.POST.get('telephone', '').strip()
+        cin       = request.POST.get('cin', '').strip()
         login     = request.POST.get('login', '').strip()
         password  = request.POST.get('password', '').strip()
 
         try:
-            if not nom or not email or not login or not password:
-                raise ValueError("Nom, email, login et mot de passe sont obligatoires.")
+            if not nom or not email or not login or not password or not cin:
+                raise ValueError("Nom, email, CIN, login et mot de passe sont obligatoires.")
             if Etudiant.objects.filter(email__iexact=email).exists():
                 raise DoublonException(f"Un membre avec l'email '{email}' existe déjà.")
+            if Etudiant.objects.filter(cin__iexact=cin).exists():
+                raise DoublonException(f"Un membre avec le CIN '{cin}' existe déjà.")
             if Utilisateur.objects.filter(login__iexact=login).exists():
                 raise DoublonException(f"Le login '{login}' est déjà utilisé.")
 
@@ -361,7 +403,8 @@ def gestion_membres(request):
             Etudiant.objects.create(
                 utilisateur=user,
                 nom=nom, prenom=prenom,
-                email=email, telephone=telephone
+                email=email, telephone=telephone,
+                cin=cin
             )
             messages.success(request, f"Membre '{nom} {prenom}' ajouté avec login '{login}'.")
 
@@ -429,6 +472,7 @@ def import_etudiants_excel(request):
                     prenom    = str(data.get('prenom', '') or '').strip()
                     email     = str(data.get('email', '') or '').strip()
                     telephone = str(data.get('telephone', '') or '').strip()
+                    cin       = str(data.get('cin', '') or data.get('CIN', '') or '').strip()
                     login     = str(data.get('login', '') or '').strip()
                     password  = str(data.get('password', '') or '').strip()
 
@@ -436,8 +480,10 @@ def import_etudiants_excel(request):
                         ignores += 1
                         continue
 
+                    cin_val = cin if cin else None
                     if Etudiant.objects.filter(email__iexact=email).exists() or \
-                       Utilisateur.objects.filter(login__iexact=login).exists():
+                       Utilisateur.objects.filter(login__iexact=login).exists() or \
+                       (cin_val and Etudiant.objects.filter(cin__iexact=cin_val).exists()):
                         ignores += 1
                         continue
 
@@ -450,7 +496,8 @@ def import_etudiants_excel(request):
                     Etudiant.objects.create(
                         utilisateur=user,
                         nom=nom, prenom=prenom,
-                        email=email, telephone=telephone
+                        email=email, telephone=telephone,
+                        cin=cin_val
                     )
                     ajoutes += 1
 

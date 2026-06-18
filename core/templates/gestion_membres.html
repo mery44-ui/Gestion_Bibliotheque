@@ -103,6 +103,7 @@
         <th>NOM COMPLET</th>
         <th>EMAIL</th>
         <th>TÉLÉPHONE</th>
+        <th>CIN</th>
         <th>LOGIN</th>
         <th>STATUT</th>
         <th>ACTIONS</th>
@@ -120,6 +121,9 @@
         <td style="color:#6b7280;font-size:0.83rem;">{{ membre.email }}</td>
         <td style="color:#6b7280;font-size:0.83rem;">
           {{ membre.telephone|default:"—" }}
+        </td>
+        <td style="color:#6b7280;font-size:0.83rem;">
+          {{ membre.cin|default:"—" }}
         </td>
         <td style="font-size:0.83rem;">
           {% if membre.utilisateur %}
@@ -183,6 +187,10 @@
         <div>
           <label class="form-label">Téléphone</label>
           <input type="text" name="telephone" class="form-input" placeholder="06XXXXXXXX"/>
+        </div>
+        <div>
+          <label class="form-label">CIN (Question secrète) *</label>
+          <input type="text" name="cin" class="form-input" placeholder="Numéro de CIN" required/>
         </div>
 
         <hr class="divider-form"/>

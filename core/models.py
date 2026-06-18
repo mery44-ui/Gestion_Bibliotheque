@@ -25,6 +25,7 @@ class Etudiant(models.Model):
     prenom    = models.CharField(max_length=100)
     email     = models.EmailField(unique=True)
     telephone = models.CharField(max_length=20, blank=True)
+    cin       = models.CharField(max_length=20, unique=True, null=True, blank=True)
 
     def __str__(self):
         return f"{self.nom} {self.prenom}"

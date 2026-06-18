@@ -122,6 +122,12 @@
           {{ etudiant.telephone }}
         </div>
         {% endif %}
+        {% if etudiant.cin %}
+        <div class="profile-info-row">
+          <i class="fa-solid fa-id-card"></i>
+          CIN : {{ etudiant.cin }}
+        </div>
+        {% endif %}
         {% if etudiant.utilisateur %}
         <div class="profile-info-row">
           <i class="fa-solid fa-at"></i>
