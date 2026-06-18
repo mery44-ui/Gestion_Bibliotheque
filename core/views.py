@@ -17,20 +17,14 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 
 
-# ─── TENTATIVES LOGIN ─────────────────────────────────────────
+
 tentatives = {}
 
 
-# ══════════════════════════════════════════════════════════════
-#  LOGIN / LOGOUT
-# ══════════════════════════════════════════════════════════════
 def login_view(request):
-    remembered_username = request.COOKIES.get('remembered_username', '')
-
     if request.method == 'POST':
         login    = request.POST.get('login', '').strip()
         password = request.POST.get('password', '').strip()
-        remember_me = request.POST.get('remember_me') == 'on'
 
         try:
             if tentatives.get(login, 0) >= 3:
@@ -54,24 +48,12 @@ def login_view(request):
             request.session['role']    = user.role
             request.session['login']   = user.login
 
-            if remember_me:
-                request.session.set_expiry(1209600)  # 2 semaines
-            else:
-                request.session.set_expiry(0)  # Expire à la fermeture du navigateur
-
             if user.role == 'etudiant':
-                response = redirect('/recherche/')
+                return redirect('/recherche/')
             elif user.role == 'bibliothecaire':
-                response = redirect('/gestion-livres/')
+                return redirect('/gestion-livres/')
             else:
-                response = redirect('/dashboard/')
-
-            if remember_me:
-                response.set_cookie('remembered_username', login, max_age=1209600)
-            else:
-                response.delete_cookie('remembered_username')
-
-            return response
+                return redirect('/dashboard/')
 
         except CompteBloquéException:
             messages.error(request, "Accès bloqué après 3 tentatives. Contactez l'administrateur.")
@@ -84,18 +66,7 @@ def login_view(request):
             else:
                 messages.error(request, "Accès bloqué après 3 tentatives.")
 
-    total_livres = Livre.objects.count()
-    membres_actifs = Etudiant.objects.count()
-    emprunts_en_cours = Emprunt.objects.filter(rendu=False).count()
-    livres_disponibles = Livre.objects.filter(disponible=True).count()
-
-    return render(request, 'login.html', {
-        'total_livres': total_livres,
-        'membres_actifs': membres_actifs,
-        'emprunts_en_cours': emprunts_en_cours,
-        'livres_disponibles': livres_disponibles,
-        'remembered_username': remembered_username,
-    })
+    return render(request, 'login.html')
 
 
 def logout_view(request):
@@ -148,15 +119,12 @@ def recherche_livre(request):
     livres = Livre.objects.all()
     query  = request.GET.get('q', '').strip()
     cat    = request.GET.get('cat', '').strip()
-    dispo_only = request.GET.get('dispo', '').strip() == '1'
 
     if query:
         livres = livres.filter(titre__icontains=query) | \
                  livres.filter(auteur__icontains=query)
     if cat:
         livres = livres.filter(categorie__icontains=cat)
-    if dispo_only:
-        livres = livres.filter(disponible=True)
 
     categories = Livre.objects.values_list('categorie', flat=True)\
                               .distinct().exclude(categorie='')
@@ -165,7 +133,6 @@ def recherche_livre(request):
         'livres':     livres,
         'query':      query,
         'cat':        cat,
-        'dispo_only': dispo_only,
         'categories': categories,
     })
 
@@ -177,28 +144,16 @@ def mes_emprunts(request):
     if 'user_id' not in request.session:
         return redirect('/login/')
 
-    aujourd_hui = date.today()
     try:
         etudiant = Etudiant.objects.get(
             utilisateur__id=request.session['user_id']
         )
         emprunts = Emprunt.objects.filter(etudiant=etudiant)\
                                   .order_by('-date_emprunt')
-        en_cours   = emprunts.filter(rendu=False)
-        historique = emprunts.filter(rendu=True)
-        en_retard  = emprunts.filter(rendu=False, date_retour_prevue__lt=aujourd_hui)
     except Etudiant.DoesNotExist:
-        emprunts   = []
-        en_cours   = []
-        historique = []
-        en_retard  = []
+        emprunts = []
 
-    return render(request, 'mes_emprunts.html', {
-        'emprunts': emprunts,
-        'en_cours': en_cours,
-        'historique': historique,
-        'en_retard': en_retard,
-    })
+    return render(request, 'mes_emprunts.html', {'emprunts': emprunts})
 
 
 # ══════════════════════════════════════════════════════════════
@@ -208,26 +163,14 @@ def fiche_etudiant(request):
     if 'user_id' not in request.session:
         return redirect('/login/')
 
-    aujourd_hui = date.today()
     try:
         etudiant = Etudiant.objects.get(
             utilisateur__id=request.session['user_id']
         )
-        emprunts  = Emprunt.objects.filter(etudiant=etudiant).order_by('-date_emprunt')
-        en_cours  = emprunts.filter(rendu=False)
-        en_retard = emprunts.filter(rendu=False, date_retour_prevue__lt=aujourd_hui)
     except Etudiant.DoesNotExist:
-        etudiant  = None
-        emprunts  = []
-        en_cours  = []
-        en_retard = []
+        etudiant = None
 
-    return render(request, 'fiche_etudiant.html', {
-        'etudiant': etudiant,
-        'emprunts': emprunts,
-        'en_cours': en_cours,
-        'en_retard': en_retard,
-    })
+    return render(request, 'fiche_etudiant.html', {'etudiant': etudiant})
 
 
 # ══════════════════════════════════════════════════════════════
@@ -248,12 +191,6 @@ def dashboard(request):
     membres_actifs     = Etudiant.objects.count()
     derniers_emprunts  = Emprunt.objects.order_by('-date_emprunt')[:5]
 
-    # Statistiques supplémentaires
-    emprunts_rendus    = Emprunt.objects.filter(rendu=True).count()
-    comptes_inactifs   = Utilisateur.objects.filter(actif=False).count()
-    livres_empruntes   = Livre.objects.filter(disponible=False).count()
-    liste_retards      = Emprunt.objects.filter(rendu=False, date_retour_prevue__lt=aujourd_hui)
-
     # Statistiques par catégorie pour graphique
     from django.db.models import Count
     stats_categories = list(
@@ -262,30 +199,6 @@ def dashboard(request):
                      .order_by('-total')[:5]
     )
 
-    categories_labels  = [sc['categorie'] if sc['categorie'] else "Sans catégorie" for sc in stats_categories]
-    categories_valeurs = [sc['total'] for sc in stats_categories]
-
-    # Emprunts par mois (6 derniers mois)
-    mois_list = []
-    annee, mois = aujourd_hui.year, aujourd_hui.month
-    for _ in range(6):
-        mois_list.append((annee, mois))
-        mois -= 1
-        if mois == 0:
-            mois = 12
-            annee -= 1
-    mois_list.reverse()
-
-    nom_mois = {
-        1: "Jan", 2: "Fév", 3: "Mar", 4: "Avr", 5: "Mai", 6: "Juin",
-        7: "Juil", 8: "Août", 9: "Sept", 10: "Oct", 11: "Nov", 12: "Déc"
-    }
-    mois_labels  = [f"{nom_mois[m]} {str(y)[2:]}" for y, m in mois_list]
-    mois_valeurs = []
-    for y, m in mois_list:
-        count = Emprunt.objects.filter(date_emprunt__year=y, date_emprunt__month=m).count()
-        mois_valeurs.append(count)
-
     return render(request, 'dashboard.html', {
         'data': {
             'total_livres':       total_livres,
@@ -293,16 +206,9 @@ def dashboard(request):
             'emprunts_en_cours':  emprunts_en_cours,
             'emprunts_en_retard': emprunts_en_retard,
             'membres_actifs':     membres_actifs,
-            'emprunts_rendus':    emprunts_rendus,
-            'comptes_inactifs':   comptes_inactifs,
-            'livres_empruntes':   livres_empruntes,
         },
         'derniers_emprunts':  derniers_emprunts,
-        'liste_retards':      liste_retards,
-        'categories_labels':  categories_labels,
-        'categories_valeurs': categories_valeurs,
-        'mois_labels':        mois_labels,
-        'mois_valeurs':       mois_valeurs,
+        'stats_categories':   stats_categories,
     })
 
 
@@ -352,31 +258,8 @@ def gestion_livres(request):
         except LivreIndisponibleException as e:
             messages.error(request, str(e))
 
-    # Filtrage et recherche
-    livres     = Livre.objects.all()
-    query      = request.GET.get('q', '').strip()
-    cat        = request.GET.get('cat', '').strip()
-    dispo_only = request.GET.get('dispo', '').strip()
-
-    if query:
-        livres = livres.filter(titre__icontains=query) | \
-                 livres.filter(auteur__icontains=query)
-    if cat:
-        livres = livres.filter(categorie__icontains=cat)
-    if dispo_only == '1':
-        livres = livres.filter(disponible=True)
-    elif dispo_only == '0':
-        livres = livres.filter(disponible=False)
-
-    categories = Livre.objects.values_list('categorie', flat=True)\
-                              .distinct().exclude(categorie='')
-
     return render(request, 'gestion_livres.html', {
-        'livres':     livres.order_by('titre'),
-        'query':      query,
-        'cat':        cat,
-        'dispo_only': dispo_only,
-        'categories': categories,
+        'livres': Livre.objects.all().order_by('titre')
     })
 
 
@@ -601,6 +484,13 @@ def gestion_emprunts(request):
                 livre_id    = request.POST.get('livre_id')
                 date_retour = request.POST.get('date_retour')
 
+                if date_retour:
+                    dt_retour = datetime.strptime(date_retour, '%Y-%m-%d').date()
+                    if dt_retour < date.today():
+                        raise ValueError("La date de retour prévue ne peut pas être antérieure à la date d'aujourd'hui.")
+                else:
+                    raise ValueError("La date de retour prévue est obligatoire.")
+
                 try:
                     etudiant = Etudiant.objects.get(id=etudiant_id)
                 except Etudiant.DoesNotExist:
@@ -619,7 +509,7 @@ def gestion_emprunts(request):
                 Emprunt.objects.create(
                     etudiant=etudiant,
                     livre=livre,
-                    date_retour_prevue=date_retour
+                    date_retour_prevue=dt_retour
                 )
                 livre.disponible = False
                 livre.save()
@@ -630,7 +520,8 @@ def gestion_emprunts(request):
 
             except (LivreIndisponibleException,
                     LivreIntrouvableException,
-                    MembreIntrouvableException) as e:
+                    MembreIntrouvableException,
+                    ValueError) as e:
                 messages.error(request, str(e))
 
         elif action == 'retour':
@@ -646,23 +537,30 @@ def gestion_emprunts(request):
                     )
 
                 dt_eff = datetime.strptime(date_retour_eff, '%Y-%m-%d').date()
-                retard = max(0, (dt_eff - emprunt.date_retour_prevue).days)
+                retard = (dt_eff - emprunt.date_retour_prevue).days
 
                 emprunt.date_retour_effective = dt_eff
                 emprunt.retard = retard
                 emprunt.rendu  = True
-                emprunt.save()
+  
 
                 emprunt.livre.disponible = True
                 emprunt.livre.save()
 
-                if retard > 0:
+                if retard >0:
                     messages.warning(
                         request,
                         f"Retour enregistré avec {retard} jour(s) de retard."
                     )
+                elif retard<0:
+                    messages.warning(
+                        request,
+                        f"emprunt non enregistree (date invalide)"
+                    )
+
                 else:
                     messages.success(request, "Retour enregistré à temps !")
+                
 
             except EmpruntIntrouvableException as e:
                 messages.error(request, str(e))
@@ -673,14 +571,12 @@ def gestion_emprunts(request):
         rendu=False,
         date_retour_prevue__lt=aujourd_hui
     )
-    nb_retards     = retards.count()
 
     return render(request, 'gestion_emprunts.html', {
         'emprunts':   Emprunt.objects.filter(rendu=False).order_by('date_retour_prevue'),
         'etudiants':  Etudiant.objects.all(),
         'livres':     Livre.objects.filter(disponible=True),
         'retards':    retards,
-        'nb_retards': nb_retards,
     })
 
 
@@ -693,30 +589,20 @@ def notifications_retard(request):
         return redirect('/login/')
 
     aujourd_hui = date.today()
-    emprunt_id = request.GET.get('emprunt')
+    retards = Emprunt.objects.filter(
+        rendu=False,
+        date_retour_prevue__lt=aujourd_hui,
+        notif_envoyee=False
+    )
 
-    if emprunt_id:
-        try:
-            emprunt = Emprunt.objects.get(id=emprunt_id, rendu=False, date_retour_prevue__lt=aujourd_hui)
-            emprunt.notif_envoyee = True
-            emprunt.save()
-            messages.success(request, f"Notification envoyée à {emprunt.etudiant.nom} {emprunt.etudiant.prenom} pour '{emprunt.livre.titre}'.")
-        except Emprunt.DoesNotExist:
-            messages.error(request, "Emprunt introuvable ou déjà rendu.")
-    else:
-        retards = Emprunt.objects.filter(
-            rendu=False,
-            date_retour_prevue__lt=aujourd_hui,
-            notif_envoyee=False
-        )
-        nb = 0
-        for emprunt in retards:
-            emprunt.notif_envoyee = True
-            emprunt.save()
-            nb += 1
-        messages.success(request, f"{nb} notification(s) de retard envoyée(s).")
+    nb = 0
+    for emprunt in retards:
+        emprunt.notif_envoyee = True
+        emprunt.save()
+        nb += 1
 
-    return redirect('/notifications/')
+    messages.success(request, f"{nb} notification(s) de retard marquée(s).")
+    return redirect('/gestion-emprunts/')
 
 
 # ══════════════════════════════════════════════════════════════
@@ -731,38 +617,21 @@ def gestion_comptes(request):
     if 'user_id' not in request.session:
         return redirect('/login/')
 
-    current_user_id = request.session.get('user_id')
-
     if request.method == 'POST':
-        compte_id        = request.POST.get('compte_id')
-        nouveau_login    = request.POST.get('nouveau_login', '').strip()
-        nouveau_role     = request.POST.get('nouveau_role', '').strip()
-        nouveau_password = request.POST.get('nouveau_password', '').strip()
-        actif            = request.POST.get('actif') == 'on'
+        compte_id     = request.POST.get('compte_id')
+        nouveau_login = request.POST.get('nouveau_login', '').strip()
+        nouveau_role  = request.POST.get('nouveau_role', '').strip()
+        actif         = request.POST.get('actif') == 'on'
 
         try:
             compte = Utilisateur.objects.get(id=compte_id)
-            is_self = int(compte_id) == current_user_id
-
             # Vérifier doublon login
             if Utilisateur.objects.filter(login=nouveau_login)\
                                 .exclude(id=compte_id).exists():
                 raise DoublonException(f"Le login '{nouveau_login}' est déjà utilisé.")
-            
             compte.login = nouveau_login
-
-            if is_self:
-                if not actif:
-                    messages.error(request, "Vous ne pouvez pas désactiver votre propre compte administrateur.")
-                compte.role = 'administrateur'
-                compte.actif = True
-            else:
-                compte.role = nouveau_role
-                compte.actif = actif
-
-            if nouveau_password:
-                compte.mot_de_passe = nouveau_password
-
+            compte.role  = nouveau_role
+            compte.actif = actif
             compte.save()
             messages.success(request, "Compte modifié avec succès.")
         except Utilisateur.DoesNotExist:
@@ -774,11 +643,8 @@ def gestion_comptes(request):
     suppr_id = request.GET.get('suppr')
     if suppr_id:
         try:
-            if int(suppr_id) == current_user_id:
-                messages.error(request, "Vous ne pouvez pas supprimer votre propre compte.")
-            else:
-                Utilisateur.objects.get(id=suppr_id).delete()
-                messages.success(request, "Compte supprimé.")
+            Utilisateur.objects.get(id=suppr_id).delete()
+            messages.success(request, "Compte supprimé.")
         except Utilisateur.DoesNotExist:
             messages.error(request, "Compte introuvable.")
 
@@ -786,60 +652,40 @@ def gestion_comptes(request):
     toggle_id = request.GET.get('toggle')
     if toggle_id:
         try:
-            if int(toggle_id) == current_user_id:
-                messages.error(request, "Vous ne pouvez pas désactiver votre propre compte administrateur.")
-            else:
-                compte = Utilisateur.objects.get(id=toggle_id)
-                compte.actif = not compte.actif
-                compte.save()
-                statut = "activé" if compte.actif else "désactivé"
-                messages.success(request, f"Compte {statut}.")
+            compte = Utilisateur.objects.get(id=toggle_id)
+            compte.actif = not compte.actif
+            compte.save()
+            statut = "activé" if compte.actif else "désactivé"
+            messages.success(request, f"Compte {statut}.")
         except Utilisateur.DoesNotExist:
             messages.error(request, "Compte introuvable.")
-
+    # Débloquer un compte
     # Débloquer un compte
     debloquer_id = request.GET.get('debloquer')
     if debloquer_id:
         try:
             compte = Utilisateur.objects.get(id=debloquer_id)
+
             login = compte.login
             if login in tentatives:
                 tentatives[login] = 0
 
             compte.actif = True
             compte.save()
-            messages.success(request, f"Compte de {login} débloqué.")
+
+            messages.success(
+                request,
+                f"Compte de {login} débloqué."
+            )
+
         except Utilisateur.DoesNotExist:
             messages.error(request, "Compte introuvable.")
 
-    role_filtre = request.GET.get('role', '').strip()
-    comptes = Utilisateur.objects.all()
-    if role_filtre:
-        comptes = comptes.filter(role=role_filtre)
-    comptes = comptes.order_by('role', 'login')
-
-    for c in comptes:
-        c.bloque = tentatives.get(c.login, 0) >= 3
-
     return render(request, 'gestion_comptes.html', {
-        'comptes': comptes,
-        'role_filtre': role_filtre,
+        'comptes': Utilisateur.objects.all().order_by('role', 'login')
     })
 def retards_page(request):
-    if 'user_id' not in request.session:
-        return redirect('/login/')
-
-    aujourd_hui = date.today()
-    retards = Emprunt.objects.filter(
-        rendu=False,
-        date_retour_prevue__lt=aujourd_hui
-    )
-    nb_retards = retards.count()
-
-    return render(request, 'notifications.html', {
-        'retards': retards,
-        'nb_retards': nb_retards,
-    })
+    return notifications_retard(request)
 
 # ══════════════════════════════════════════════════════════════
 #  RAPPORT (Administrateur)
@@ -904,9 +750,9 @@ def rapport_pdf(request, rapport_id):
     p.drawString(50, hauteur - 60, "Bibliothèque — Rapport")
     p.setFont("Helvetica", 12)
     p.drawString(50, hauteur - 90,
-                 f"Type : {r.get_type_display()}")
+                f"Type : {r.get_type_display()}")
     p.drawString(50, hauteur - 110,
-                 f"Généré le : {r.date_generation.strftime('%d/%m/%Y %H:%M')}")
+                f"Généré le : {r.date_generation.strftime('%d/%m/%Y %H:%M')}")
 
     # Ligne séparatrice
     p.line(50, hauteur - 125, largeur - 50, hauteur - 125)
