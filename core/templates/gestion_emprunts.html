@@ -137,7 +137,7 @@
       </div>
       <div>
         <label class="form-label">Date de retour prévue *</label>
-        <input type="date" name="date_retour" class="form-input" required/>
+        <input type="date" name="date_retour" id="dateRetourPrevue" class="form-input" required/>
       </div>
       <button type="submit" class="btn-primary-custom" style="white-space:nowrap;">
         <i class="fa-solid fa-plus"></i> Enregistrer
@@ -243,6 +243,15 @@
 
 {% block extra_js %}
 <script>
+// Limiter la date minimale de retour prévue à aujourd'hui (jours antérieurs grisés)
+document.addEventListener("DOMContentLoaded", function() {
+  const today = new Date().toISOString().split('T')[0];
+  const dateInput = document.getElementById('dateRetourPrevue');
+  if (dateInput) {
+    dateInput.min = today;
+  }
+});
+
 function switchTab(name, btn) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
