@@ -537,7 +537,7 @@ def gestion_emprunts(request):
                     )
 
                 dt_eff = datetime.strptime(date_retour_eff, '%Y-%m-%d').date()
-                retard = (dt_eff - emprunt.date_retour_prevue).days
+                retard = max(0, (dt_eff - emprunt.date_retour_prevue).days)
 
                 emprunt.date_retour_effective = dt_eff
                 emprunt.retard = retard
@@ -547,20 +547,13 @@ def gestion_emprunts(request):
                 emprunt.livre.disponible = True
                 emprunt.livre.save()
 
-                if retard >0:
+                if retard > 0:
                     messages.warning(
                         request,
                         f"Retour enregistré avec {retard} jour(s) de retard."
                     )
-                elif retard<0:
-                    messages.warning(
-                        request,
-                        f"emprunt non enregistree (date invalide)"
-                    )
-
                 else:
                     messages.success(request, "Retour enregistré à temps !")
-                
 
             except EmpruntIntrouvableException as e:
                 messages.error(request, str(e))
